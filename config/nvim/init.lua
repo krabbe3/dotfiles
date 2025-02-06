@@ -1,3 +1,4 @@
+-- NEOVIM INITIALIZATION FILE!
 -- include keymaps
 local config_included = pcall(require, 'user.keymaps')
 if not config_included then
