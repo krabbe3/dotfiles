@@ -1,8 +1,10 @@
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/dotfiles/zsh/.oh-my-zsh"
+# custom folder for themes
+export ZSH_CUSTOM="$ZSH"
 
 # theme
-ZSH_THEME="Gnzh"
+ZSH_THEME="gnzh"
 
 # hyphen insensitive search (-_)
 HYPHEN_INSENSITIVE="true"
@@ -38,8 +40,6 @@ zstyle ':omz:update' frequency 13
 # see 'man strftime' for details.
 # HIST_STAMPS="mm/dd/yyyy"
 
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
 
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
