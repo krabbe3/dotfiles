@@ -1,0 +1,11 @@
+Host hpc
+  HostName cslogin.tu-ilmenau.de
+  User lomo3746
+  ForwardAgent yes
+
+
+Host m69
+  HostName makalu69.rz.tu-ilmenau.de
+  User lomo3746
+  ProxyJump hpc
+  ForwardAgent yes    
