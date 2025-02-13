@@ -1,3 +1,6 @@
 [user]
 	email = lorenz.mohr@tu-ilmenau.de
 	name = Lorenz
+
+[push]
+    autoSetupRemote = true
