@@ -101,3 +101,10 @@ fi
 
 # add VS Code to PATH variable
 export PATH="/Applications/Visual Studio Code.app/Contents/Resources/app/bin:$PATH"
+
+# try conda activate dir everytime I cd into a dir
+cd() {
+    builtin cd "$@" || return  # Change directory, exit if it fails
+    env_name=$(basename "$PWD")  # Use the folder name as the environment name
+    conda activate "$env_name" 2>/dev/null || true  # Try to activate, ignore errors
+}
