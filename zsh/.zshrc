@@ -106,5 +106,9 @@ export PATH="/Applications/Visual Studio Code.app/Contents/Resources/app/bin:$PA
 cd() {
     builtin cd "$@" || return  # Change directory, exit if it fails
     env_name=$(basename "$PWD")  # Use the folder name as the environment name
-    conda activate "$env_name" 2>/dev/null || true  # Try to activate, ignore errors
+    if conda env list | grep -qw "$env_name"; then
+        conda activate "$env_name" 2>/dev/null || true  # Try to activate the environment
+    else
+        conda activate base 2>/dev/null || true  # If no matching environment, activate base
+    fi
 }
