@@ -8,7 +8,7 @@ local keymap = vim.keymap.set
 vim.g.mapleader = " "
 
 -- netrw keymaps
-vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
+vim.keymap.set("n", "<leader>xp", vim.cmd.Ex)
 
 -- INSERT mode keymaps
 keymap('i', 'jk', '<ESC>', opts)
