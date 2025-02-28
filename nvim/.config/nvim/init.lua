@@ -13,14 +13,20 @@ if vim.g.vscode then
 
 -- ordinary Neovim setup
 else
+    -- load packer
+    local packer_loaded = pcall(require, 'packer.packer')
+    if not packer_loaded then
+        print('Packer could not be loaded')
+    end
+    -- load keymaps
     local config_included = pcall(require, 'user.keymaps')
     if not config_included then
-	    print('Keymaps could not be included')
+        print('Keymaps could not be included')
     end
 
     local config_included = pcall(require, 'user.options')
     if not config_included then
-	    print('Options could not be included')
+        print('Options could not be included')
     end
 end
 
