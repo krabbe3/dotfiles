@@ -18,12 +18,17 @@ else
     if not packer_loaded then
         print('Packer could not be loaded')
     end
+
+    -- oil file explorer
+    --require("oil").setup()
+
     -- load keymaps
     local config_included = pcall(require, 'user.keymaps')
     if not config_included then
         print('Keymaps could not be included')
     end
 
+    -- load options
     local config_included = pcall(require, 'user.options')
     if not config_included then
         print('Options could not be included')
