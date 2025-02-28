@@ -5,3 +5,6 @@ WIP
 
 - clone the repo
 - then softlink all dotfiles by executing the script ./setup_dotfiles.sh
+
+## Config Files
+- [Neovim](nvim/README.md)
