@@ -101,3 +101,6 @@ fi
 
 # add VS Code to PATH variable
 export PATH="/Applications/Visual Studio Code.app/Contents/Resources/app/bin:$PATH"
+export MKL_NUM_THREADS=1
+export OMP_NUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
