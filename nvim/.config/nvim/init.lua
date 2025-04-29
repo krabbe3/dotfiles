@@ -13,14 +13,11 @@ if vim.g.vscode then
 
 -- ordinary Neovim setup
 else
-    -- load packer
-    local packer_loaded = pcall(require, 'packer.packer')
-    if not packer_loaded then
-        print('Packer could not be loaded')
+    -- load lazy
+    local lazy_loaded = pcall(require, 'config.lazy')
+    if not lazy_loaded then
+        print('Lazy could not be loaded')
     end
-
-    -- oil file explorer
-    --require("oil").setup()
 
     -- load keymaps
     local config_included = pcall(require, 'user.keymaps')

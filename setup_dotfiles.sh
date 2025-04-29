@@ -43,5 +43,4 @@ for program in ${PROGRAMS[@]}; do
   stow -v --target=$HOME $program
   echo "Configuring $program"
 done
-
-echo "Done!"
+echo "Finished softlinking files!"

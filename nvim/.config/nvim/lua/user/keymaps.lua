@@ -7,8 +7,8 @@ local keymap = vim.keymap.set
 -- define leader key
 vim.g.mapleader = " "
 
--- oil file explorer keymaps
-vim.keymap.set("n", "<leader>xp", vim.cmd.Oil)
+-- OIL KEYMAPS 
+vim.keymap.set("n", "<leader>xp", vim.cmd.Oil, { desc = "Open Oil Filemanager" })
 
 -- INSERT mode keymaps
 keymap('i', 'jk', '<ESC>', opts)
