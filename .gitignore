@@ -1,6 +1,2 @@
 backups/dot*
-<<<<<<< HEAD
-nvim/.config/nvim/plugin/packer_compiled.lua
-=======
 *lazy-lock.json
->>>>>>> 6606b7e (oil integration)
