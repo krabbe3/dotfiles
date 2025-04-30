@@ -21,3 +21,5 @@ vim.api.nvim_create_autocmd("InsertLeave", {
     pattern = "*",
     command = "set relativenumber"
 })
+
+vim.opt.termguicolors = true
