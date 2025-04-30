@@ -14,4 +14,4 @@ vim.keymap.set("n", "<leader>xp", vim.cmd.Oil, { desc = "Open Oil Filemanager" }
 keymap('i', 'jk', '<ESC>', opts)
 
 -- VISUAL mode keymaps
-keymap('v', 'jk', '<ESC>', opts)
+keymap('v', '<leader>jk', '<ESC>', opts)
