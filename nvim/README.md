@@ -2,7 +2,7 @@
 
 ## TODOs
 
-[ ] Add Icons for Oil file explorer (e.g. mini.icons)
+[x] Add Icons for Oil file explorer (e.g. mini.icons)
 [ ] LSP
 [ ] Debugger (DAP)
 
@@ -17,3 +17,7 @@
     - leader ps project search grep  
 ...
 
+### 04/30/2025
+
+- restructured to lazy
+- added some nice keymaps to oil
