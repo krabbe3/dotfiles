@@ -7,7 +7,7 @@ return{
         config = function()
             require('nvim-treesitter.configs').setup ({
                 -- featured languages
-                ensure_installed = { "toml", "yaml", "c", "python", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline" },
+                ensure_installed = {  "vimdoc", "toml", "yaml", "c", "python", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline" },
 
                 -- Install parsers synchronously (only applied to `ensure_installed`)
                 sync_install = false,
