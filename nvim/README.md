@@ -6,18 +6,7 @@
 [ ] LSP
 [ ] Debugger (DAP)
 
-## Changelog
 
-### 02/28/2025
+## Things to look into
 
-- added packer
-- added telescope and small configs/keymaps 
-    - leader pf (find (proj) file 
-    - C-p find git files
-    - leader ps project search grep  
-...
-
-### 04/30/2025
-
-- restructured to lazy
-- added some nice keymaps to oil
+- fugitive.nvim
