@@ -21,6 +21,11 @@ return {
                     },
                     n = {
                         ["<leader>jk"] = require('telescope.actions').close,
+                        -- <leader>l opens file and centers cursor
+                        ["<leader>l"] = function(prompt_bufnr)
+                            require('telescope.actions').select_default(prompt_bufnr)
+                            vim.cmd("normal! zz")
+                        end,
                     },
                 },
             },
