@@ -10,6 +10,7 @@ return{
         -- keymaps
         -- add current file to harpoon list
         vim.keymap.set("n", "<leader>ah", function() harpoon:list():add() end)
+        vim.keymap.set("n", "<leader>dh", function() harpoon:list():remove() end)
         -- open harpoon list
         vim.keymap.set("n", "<leader>oh", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
         -- select 1,2,3,4 th file

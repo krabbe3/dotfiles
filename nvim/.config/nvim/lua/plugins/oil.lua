@@ -62,6 +62,8 @@ return{
                 }
                     
             })
+            -- open oil with leader xp
+            vim.keymap.set("n", "<leader>xp", vim.cmd.Oil, { desc = "Open Oil Filemanager" })
         end
     }
 }
