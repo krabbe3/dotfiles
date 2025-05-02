@@ -15,7 +15,7 @@ keymap("n", "<leader>wk", "<C-w>k", opts, { desc = "Move to upper split" })
 keymap("n", "<leader>wl", "<C-w>l", opts, { desc = "Move to right split" })
 
 -- INSERT mode keymaps
-keymap('i', '<leader>jk', '<ESC>', opts, { desc = "Escape insert mode" })
+keymap('i', 'jk', '<ESC>', opts, { desc = "Escape insert mode" })
 
 -- VISUAL mode keymaps
 keymap('v', '<leader>jk', '<ESC>', opts, { desc = "Escape visual mode" })
