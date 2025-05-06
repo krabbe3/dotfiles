@@ -1,4 +1,4 @@
-return{
+return {
     {
         'stevearc/oil.nvim',
         ---@module 'oil'
@@ -29,12 +29,12 @@ return{
                     natural_order = "fast",
                     -- case insensitive sorting
                     case_insensitive = false,
-               },
+                },
 
                 -- preview window
                 preview_win = {
                     update_on_cursor_moved = true,
-                    preview_method = "fast_scratch", 
+                    preview_method = "fast_scratch",
                 },
 
                 vim.api.nvim_create_autocmd("User", {
@@ -48,19 +48,19 @@ return{
                             })
                         end
                     end),
-                }),                  
+                }),
 
                 -- Keymaps
                 keymaps = {
-                    ["g?"] = { "actions.show_help", mode = "n" , desc = "Show default keymaps"},
-                    ["<leader>p"] = { "actions.preview", opts = { vertical = true, split = "botright"}, desc = "Show file preview" },
+                    ["g?"] = { "actions.show_help", mode = "n", desc = "Show default keymaps" },
+                    ["<leader>p"] = { "actions.preview", opts = { vertical = true, split = "botright" }, desc = "Show file preview" },
                     -- go to home dir
                     ["~"] = "<cmd>edit $HOME<CR>",
-                    ["<leader>jk"] = { "actions.close", desc = "Close oil"},
-                    ["<leader>h"] = { "actions.parent", desc = "Go parent dir"},
-                    ["<leader>l"] = { "actions.select", desc = "Enter dir"},
+                    ["<leader>jk"] = { "actions.close", desc = "Close oil" },
+                    ["<leader>h"] = { "actions.parent", desc = "Go parent dir" },
+                    ["<leader>l"] = { "actions.select", desc = "Enter dir" },
                 }
-                    
+
             })
             -- open oil with leader xp
             vim.keymap.set("n", "<leader>xp", vim.cmd.Oil, { desc = "Open Oil Filemanager" })

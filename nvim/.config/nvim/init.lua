@@ -15,12 +15,15 @@ end
 local options_included = pcall(require, 'user.options')
 if not options_included then
     print('Options could not be included')
-
 end
 
+
+-- format .py files on save using black formatter
+-- TBC
+
+-- BLINK.CMP
 -- blink-cmp Documentation active item color change for visibility
 vim.api.nvim_set_hl(0, "BlinkCmpSignatureHelpActiveParameter", {
-    fg = "#000000",      -- black fg
-    bg = "#f6c177",      -- gold bg
+    fg = "#000000", -- black fg
+    bg = "#f6c177", -- gold bg
 })
-
