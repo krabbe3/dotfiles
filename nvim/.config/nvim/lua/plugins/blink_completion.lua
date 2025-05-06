@@ -27,7 +27,7 @@ return {
             completion = {
                 accept = { auto_brackets = { enabled = false }, },
                 documentation = {
-                    auto_show = true ,
+                    auto_show = true,
                     auto_show_delay_ms = 250,
                     update_delay_ms = 50,
                     treesitter_highlighting = true,
@@ -40,7 +40,7 @@ return {
                 --default = { 'lsp', 'path', 'snippets', 'buffer' },
                 -- exclude buffer to prevent autocompletion always triggering
                 -- TODO -> maybe make this interactive depending on file type
-                default = { 'lsp', 'path', 'snippets'},
+                default = { 'lsp', 'path', 'snippets' },
             },
 
             signature = {
@@ -51,7 +51,17 @@ return {
             -- rust fuzzy matcher rust
             fuzzy = { implementation = "prefer_rust_with_warning" }
         },
+
+        -- setup plugin with defined options
+        config = function(_, opts)
+            require('blink.cmp').setup(opts)
+
+            -- documentation active item highlighting
+            vim.api.nvim_set_hl(0, "BlinkCmpSignatureHelpActiveParameter",
+                {
+                    fg = "#000000", -- black fg
+                    bg = "#f6c177", -- gold bg
+                })
+        end,
     },
 }
-
-
