@@ -14,6 +14,9 @@ keymap("n", "<leader>wh", "<C-w>h", opts)
 keymap("n", "<leader>wj", "<C-w>j", opts)
 keymap("n", "<leader>wk", "<C-w>k", opts)
 keymap("n", "<leader>wl", "<C-w>l", opts)
+-- leader jk = esc in n
+-- EXPERIMENTAL SEE IF THIS CAUSES PROBLEMS!!!!!!!!!!!!!!!!
+keymap('n', '<leader>jk', '<ESC>', opts)
 
 -- INSERT mode keymaps
 keymap('i', 'jk', '<ESC>', opts)
