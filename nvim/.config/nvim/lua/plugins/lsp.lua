@@ -31,6 +31,16 @@ return {
                 capabilities = capabilities,
             })
 
+            -- basedpyright for even better type hints
+            require("lspconfig").basedpyright.setup({
+                capabilities = capabilities
+            })
+
+            -- -- ruff lsp for python (lightning fast)
+            -- require("lspconfig").ruff.setup({
+            --     capabilities = capabilities,
+            -- })
+
             -- KEYMAPS for LSPs
             -- change keymaps on attach
             vim.api.nvim_create_autocmd('LspAttach', {

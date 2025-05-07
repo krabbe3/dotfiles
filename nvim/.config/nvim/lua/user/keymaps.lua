@@ -1,5 +1,5 @@
 -- keymaps for my nvim setup
-local opts = {noremap = true, silent = true}
+local opts = { noremap = true, silent = true }
 
 -- define local keymap function for conciseness
 local keymap = vim.keymap.set
@@ -9,13 +9,14 @@ vim.g.mapleader = " "
 vim.g.localmapleader = " "
 
 -- NORMAL mode keymaps
-keymap("n", "<leader>wh", "<C-w>h", opts, { desc = "Move to left split" })
-keymap("n", "<leader>wj", "<C-w>j", opts, { desc = "Move to lower split" })
-keymap("n", "<leader>wk", "<C-w>k", opts, { desc = "Move to upper split" })
-keymap("n", "<leader>wl", "<C-w>l", opts, { desc = "Move to right split" })
+-- change pane in a window -> leader w
+keymap("n", "<leader>wh", "<C-w>h", opts)
+keymap("n", "<leader>wj", "<C-w>j", opts)
+keymap("n", "<leader>wk", "<C-w>k", opts)
+keymap("n", "<leader>wl", "<C-w>l", opts)
 
 -- INSERT mode keymaps
-keymap('i', 'jk', '<ESC>', opts, { desc = "Escape insert mode" })
+keymap('i', 'jk', '<ESC>', opts)
 
 -- VISUAL mode keymaps
-keymap('v', '<leader>jk', '<ESC>', opts, { desc = "Escape visual mode" })
+keymap('v', '<leader>jk', '<ESC>', opts)

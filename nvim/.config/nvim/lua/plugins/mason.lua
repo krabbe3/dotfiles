@@ -32,6 +32,8 @@ return {
                 ensure_installed = {
                     "black",
                     "debugpy",
+                    -- "ruff",
+                    "basedpyright",
                 },
             })
         end,
