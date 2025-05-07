@@ -21,7 +21,7 @@ vim.api.nvim_create_autocmd("InsertLeave", {
     command = "set relativenumber"
 })
 -- true colors
-vim.opt.termguicolors = true
+opt.termguicolors = true
 
 -- status line
 -- set statusline=%<%f\ %h%m%r%{FugitiveStatusline()}%=%-14.(%l,%c%V%)\ %P

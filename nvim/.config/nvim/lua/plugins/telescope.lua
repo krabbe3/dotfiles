@@ -1,5 +1,6 @@
 return {
-    'nvim-telescope/telescope.nvim', tag = '0.1.8',
+    'nvim-telescope/telescope.nvim',
+    tag = '0.1.8',
     dependencies = { 'nvim-lua/plenary.nvim' },
 
     -- configuration
@@ -8,7 +9,7 @@ return {
         local builtin = require('telescope.builtin')
 
         -- setup telescope
-        require('telescope').setup{
+        require('telescope').setup {
             defaults = {
                 file_ignore_patterns = {
                     '.git/',
@@ -36,12 +37,11 @@ return {
             },
         }
 
-        -- telescope keymaps 
+        -- telescope keymaps
         vim.keymap.set('n', '<leader>pf', builtin.find_files, {})
         vim.keymap.set('n', '<leader>pg', builtin.git_files, {})
-        vim.keymap.set('n', '<leader>ps', function() 
+        vim.keymap.set('n', '<leader>ps', function()
             builtin.grep_string({ search = vim.fn.input("Grep > ") })
         end)
-
     end
 }
