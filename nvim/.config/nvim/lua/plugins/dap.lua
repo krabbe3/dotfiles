@@ -13,7 +13,7 @@ return {
 
 
             -- register debugpy adapter (debugpy sits under ~/.virtualenvs/)
-            local python_path = "~/.virtualenvs/debugpy/bin/python"
+            local python_path = "~/.local/share/nvim/mason/packages/debugpy/venv/bin/python"
             require("dap-python").setup(python_path)
 
             -- DAP UI

@@ -2,9 +2,6 @@ return {
     {
         "neovim/nvim-lspconfig",
         dependencies = {
-            -- mason
-            "mason-org/mason.nvim",
-            "mason-org/mason-lspconfig.nvim",
             -- blink autocompletion
             "saghen/blink.cmp",
             -- folke lazydev for easy nvim
