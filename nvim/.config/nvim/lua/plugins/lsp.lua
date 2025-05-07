@@ -2,6 +2,9 @@ return {
     {
         "neovim/nvim-lspconfig",
         dependencies = {
+            -- mason
+            "mason-org/mason.nvim",
+            "mason-org/mason-lspconfig.nvim",
             -- blink autocompletion
             "saghen/blink.cmp",
             -- folke lazydev for easy nvim
@@ -26,7 +29,10 @@ return {
                 capabilities = capabilities,
             })
 
-            -- python
+            -- pylsp with capabilities
+            require("lspconfig").pylsp.setup({
+                capabilities = capabilities,
+            })
 
             -- KEYMAPS for LSPs
             -- change keymaps on attach
