@@ -91,7 +91,8 @@ return {
                             { buffer = args.buf, desc = "hover definition" })
                     end
 
-                    -- formatting
+                    -- formatting, if supported -> all files
+                    -- --> python uses black on save to sff is a way to preformat the files while coding
                     if client.supports_method('textDocument/formatting') then
                         -- remap format to leader ff for convenience
                         vim.keymap.set('n', '<leader>sff', function()

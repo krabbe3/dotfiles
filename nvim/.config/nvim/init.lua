@@ -16,3 +16,9 @@ local options_included = pcall(require, 'user.options')
 if not options_included then
     print('Options could not be included')
 end
+
+-- load autocommands
+local autocommands_loaded = pcall(require, 'user.autocommands')
+if not autocommands_loaded then
+    print("Autocommands could not be included")
+end
