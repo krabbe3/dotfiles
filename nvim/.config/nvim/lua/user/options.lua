@@ -59,4 +59,4 @@ vim.g.mapleader = " "
 vim.g.localmapleader = " "
 
 -- status line
--- set statusline=%<%f\ %h%m%r%{FugitiveStatusline()}%=%-14.(%l,%c%V%)\ %P
+-- vim.opt.statusline = "%<%f %h%m%r%{FugitiveStatusline()}%=%-14.(%l,%c%V%) %P"
