@@ -79,9 +79,9 @@ return {
 
                     -- go definition and go back
                     if client.supports_method('textDocument/definition') then
-                        vim.keymap.set('n', '<leader>sgd', vim.lsp.buf.definition,
+                        vim.keymap.set('n', '<leader>sd', vim.lsp.buf.definition,
                             { buffer = args.buf, desc = "go definition" })
-                        vim.keymap.set('n', '<leader>sgb', ':normal! <C-o><CR>',
+                        vim.keymap.set('n', '<leader>sb', ':normal! <C-o><CR>',
                             { buffer = args.buf, desc = "go back" })
                     end
 
