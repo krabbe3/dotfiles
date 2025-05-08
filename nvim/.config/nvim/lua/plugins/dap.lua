@@ -38,17 +38,18 @@ return {
             end
 
             -- DAP Keymaps
+            -- namespace for debugger is <leader>d(ebugger)
             -- breakpoint stuff
-            vim.keymap.set('n', '<leader>dbt', function()
+            vim.keymap.set('n', '<leader>dt', function()
                 dap.toggle_breakpoint()
             end, { desc = "toggle breakpoint" })
-            vim.keymap.set('n', '<leader>dbc', function()
+            vim.keymap.set('n', '<leader>dc', function()
                 dap.clear_breakpoints()
             end, { desc = "clear all breakpoints" })
-            -- start continue restart kill
-            vim.keymap.set('n', '<leader>dc', function()
+            -- start restart kill
+            vim.keymap.set('n', '<leader>ds', function()
                 dap.continue()
-            end, { desc = "continue" })
+            end, { desc = "start (=continue)" })
             vim.keymap.set('n', '<leader>dr', function()
                 dap.restart()
             end, { desc = "restart debugging session" })
@@ -56,18 +57,21 @@ return {
                 dap.terminate()
                 dapui.close()
             end, { desc = "kill debugging" })
-            -- step in over out vim logic (l, j, h)
-            vim.keymap.set('n', '<leader>dl', function()
+            -- step in over out in my vim logic
+            -- (j - one step down (= step into))
+            vim.keymap.set('n', '<leader>dj', function()
                 dap.step_into()
             end, { desc = "step into" })
-            vim.keymap.set('n', '<leader>dj', function()
+            -- (l - one step right (= step over))
+            vim.keymap.set('n', '<leader>dl', function()
                 dap.step_over()
             end, { desc = "step over" })
-            vim.keymap.set('n', '<leader>dh', function()
+            -- (k - one step up (= step out))
+            vim.keymap.set('n', '<leader>dk', function()
                 dap.step_out()
             end, { desc = "step out" })
             -- hover variable under cursor
-            vim.keymap.set("n", "<leader>d?", function()
+            vim.keymap.set("n", "<leader>dh", function()
                 dapui.eval(nil, { enter = true })
             end, { desc = "hover variable under cursor during debugging" })
             -- close floating window under cursor

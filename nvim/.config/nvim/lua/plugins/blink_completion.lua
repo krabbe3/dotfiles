@@ -17,6 +17,7 @@ return {
             -- C-k: Toggle signature help (if signature.enabled = true)
             -- See :h blink-cmp-config-keymap for defining your own keymap
             keymap = { preset = 'default' },
+            -- C-y: accept
 
             appearance = {
                 use_nvim_cmp_as_default = false,

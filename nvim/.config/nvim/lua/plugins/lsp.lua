@@ -42,6 +42,7 @@ return {
             -- })
 
             -- KEYMAPS for LSPs
+            -- LSP namespace is <leader>s(erver)
             -- change keymaps on attach
             vim.api.nvim_create_autocmd('LspAttach', {
                 callback = function(args)
@@ -51,51 +52,52 @@ return {
 
                     -- renaming variables
                     if client.supports_method('textDocument/rename') then
-                        vim.keymap.set('n', '<leader>cn', vim.lsp.buf.rename,
+                        vim.keymap.set('n', '<leader>scn', vim.lsp.buf.rename,
                             { buffer = args.buf, desc = "change name" })
                     end
 
                     -- code action
                     if client.supports_method('textDocument/codeAction') then
-                        vim.keymap.set('n', '<leader>ca',
+                        vim.keymap.set('n', '<leader>sca',
                             vim.lsp.buf.code_action,
                             { buffer = args.buf, desc = "code action" })
                     end
 
                     -- references as quickfix list
                     if client.supports_method('textDocument/references') then
-                        vim.keymap.set('n', '<leader>fr', vim.lsp.buf
+                        vim.keymap.set('n', '<leader>sfr', vim.lsp.buf
                             .references,
                             { buffer = args.buf, desc = "find references" })
                     end
 
                     -- go implementations
                     if client.supports_method('textDocument/implementation') then
-                        vim.keymap.set('n', '<leader>fi',
+                        vim.keymap.set('n', '<leader>sfi',
                             vim.lsp.buf.implementation,
                             { buffer = args.buf, desc = "find implementation" })
                     end
 
                     -- go definition and go back
                     if client.supports_method('textDocument/definition') then
-                        vim.keymap.set('n', '<leader>gd', vim.lsp.buf.definition,
+                        vim.keymap.set('n', '<leader>sgd', vim.lsp.buf.definition,
                             { buffer = args.buf, desc = "go definition" })
-                        vim.keymap.set('n', '<leader>gb', ':normal! <C-o><CR>',
+                        vim.keymap.set('n', '<leader>sgb', ':normal! <C-o><CR>',
                             { buffer = args.buf, desc = "go back" })
                     end
 
                     -- hover definition
                     if client.supports_method('textDocument/hover') then
-                        vim.keymap.set('n', '<leader>hd', vim.lsp.buf.hover,
+                        vim.keymap.set('n', '<leader>sh', vim.lsp.buf.hover,
                             { buffer = args.buf, desc = "hover definition" })
                     end
 
                     -- formatting
                     if client.supports_method('textDocument/formatting') then
                         -- remap format to leader ff for convenience
-                        vim.keymap.set('n', '<leader>ff', function()
+                        vim.keymap.set('n', '<leader>sff', function()
                             vim.lsp.buf.format()
                         end, { buffer = args.buf, desc = "format file" })
+
                         -- autocommand to format .lua files on save
                         if vim.bo.filetype == "lua" then
                             vim.api.nvim_create_autocmd('BufWritePre', {
