@@ -101,3 +101,8 @@ fi
 
 # add VS Code to PATH variable
 export PATH="/Applications/Visual Studio Code.app/Contents/Resources/app/bin:$PATH"
+
+# MAKALU69 has old nvim -> so use prebuild nvim 0.10.4 which is under ~/nvim/nvim_v0.10.4/bin/nvim if on Makalu as alias for nvim
+if [[ "$(hostname -s)" == "makalu69" ]]; then
+	alias nvim="$HOME/nvim/nvim-v0.10.4/bin/nvim"
+fi
