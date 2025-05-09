@@ -50,3 +50,4 @@ echo "Finished softlinking files!"
 if [ -f "$HOME/.ssh/config" ]; then
     chmod 600 "$HOME/.ssh/config"
     echo "Set permissions on ~/.ssh/config"
+fi
