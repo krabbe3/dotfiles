@@ -53,8 +53,8 @@ return {
                 -- Keymaps
                 -- oil namespace is <leader>x(plorer)
                 keymaps = {
-                    ["<leader>xoh"] = { "actions.show_help", mode = "n", desc = "Show default keymaps" },
-                    ["<leader>xop"] = { "actions.preview", opts = { vertical = true, split = "botright" }, desc = "Show file preview" },
+                    ["<leader>x?"] = { "actions.show_help", mode = "n", desc = "Show default keymaps" },
+                    ["<leader>xp"] = { "actions.preview", opts = { vertical = true, split = "botright" }, desc = "Show file preview" },
                     -- movements derived from basic vim movements
                     -- go to home dir
                     ["<leader>~"] = "<cmd>edit $HOME<CR>",

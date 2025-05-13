@@ -31,10 +31,10 @@ return {
                 capabilities = capabilities,
             })
 
-            -- basedpyright for even better type hints
-            require("lspconfig").basedpyright.setup({
-                capabilities = capabilities
-            })
+            -- -- basedpyright for even better type hints
+            -- require("lspconfig").basedpyright.setup({
+            --     capabilities = capabilities
+            -- })
 
             -- -- ruff lsp for python (lightning fast)
             -- require("lspconfig").ruff.setup({
