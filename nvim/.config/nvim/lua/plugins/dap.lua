@@ -53,7 +53,7 @@ return {
             vim.keymap.set('n', '<leader>dr', function()
                 dap.restart()
             end, { desc = "restart debugging session" })
-            vim.keymap.set("n", "<leader>dk", function()
+            vim.keymap.set("n", "<leader>dd", function()
                 dap.terminate()
                 dapui.close()
             end, { desc = "kill debugging" })
