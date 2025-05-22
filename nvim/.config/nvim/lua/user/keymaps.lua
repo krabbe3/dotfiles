@@ -10,8 +10,6 @@ keymap("n", "Q", "<nop>")
 
 
 -- NORMAL mode keymaps
--- change pane in a window -> leader w
-keymap("n", "<leader>w", "<C-w>", opts)
 -- leader jk = esc in n
 -- EXPERIMENTAL SEE IF THIS CAUSES PROBLEMS!!!!!!!!!!!!!!!!
 keymap('n', '<leader>jk', '<ESC>', opts)

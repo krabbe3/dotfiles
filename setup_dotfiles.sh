@@ -8,7 +8,7 @@
 find . -name ".DS_Store" -exec rm {} \;
 
 # PROGRAMS=(nvim vim zsh ssh git)
-PROGRAMS=(nvim zsh ssh git kitty)
+PROGRAMS=(nvim zsh ssh git kitty tmux)
 OLD_DOTFILES="backups/dotfile_bk_$(date -u +"%Y%m%d%H%M%S")"
 mkdir $OLD_DOTFILES
 
