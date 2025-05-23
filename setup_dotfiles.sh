@@ -7,7 +7,8 @@
 # Dont link DS_Store files
 find . -name ".DS_Store" -exec rm {} \;
 
-PROGRAMS=(nvim vim zsh ssh git)
+# PROGRAMS=(nvim vim zsh ssh git)
+PROGRAMS=(nvim zsh ssh git kitty tmux lazygit)
 OLD_DOTFILES="backups/dotfile_bk_$(date -u +"%Y%m%d%H%M%S")"
 mkdir $OLD_DOTFILES
 
@@ -43,5 +44,10 @@ for program in ${PROGRAMS[@]}; do
   stow -v --target=$HOME $program
   echo "Configuring $program"
 done
+echo "Finished softlinking files!"
 
-echo "Done!"
+# ensure correct permissions on ssh config
+if [ -f "$HOME/.ssh/config" ]; then
+    chmod 600 "$HOME/.ssh/config"
+    echo "Set permissions on ~/.ssh/config"
+fi

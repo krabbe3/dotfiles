@@ -10,7 +10,7 @@ ZSH_THEME="gnzh"
 HYPHEN_INSENSITIVE="true"
 
 # auto update behavior
-zstyle ':omz:update' mode auto      # update automatically without asking
+zstyle ':omz:update' mode disabled      # update automatically without asking
 
 # Uncomment the following line to change how often to auto-update (in days).
 zstyle ':omz:update' frequency 13
@@ -104,3 +104,11 @@ export PATH="/Applications/Visual Studio Code.app/Contents/Resources/app/bin:$PA
 export MKL_NUM_THREADS=1
 export OMP_NUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1
+
+# MAKALU69 has old nvim -> so use prebuild nvim 0.10.4 which is under ~/nvim/nvim_v0.10.4/bin/nvim if on Makalu as alias for nvim
+# also lazygit alias, which lies in home/lazygit
+if [[ "$(hostname -s)" == "makalu69" ]]; then
+	alias nvim="$HOME/nvim/nvim-v0.10.4/bin/nvim"
+    alias lazygit="$HOME/lazygit/lazygit"
+    export EDITOR="$HOME/nvim/nvim-v0.10.4/bin/nvim"
+fi
