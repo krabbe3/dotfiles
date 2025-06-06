@@ -111,3 +111,6 @@ if [[ "$(hostname -s)" == "makalu69" ]]; then
     alias lazygit="$HOME/lazygit/lazygit"
     export EDITOR="$HOME/nvim/nvim-v0.10.4/bin/nvim"
 fi
+
+# alias for kitty +kitten ssh
+alias kssh = "kitty +kitten ssh"
