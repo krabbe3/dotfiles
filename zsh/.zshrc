@@ -113,4 +113,4 @@ if [[ "$(hostname -s)" == "makalu69" ]]; then
 fi
 
 # alias for kitty +kitten ssh
-alias kssh = "kitty +kitten ssh"
+alias kssh="kitty +kitten ssh"
