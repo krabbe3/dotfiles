@@ -5,7 +5,7 @@ return {
             "nvim-neotest/nvim-nio",
             "rcarriga/nvim-dap-ui",
             "mfussenegger/nvim-dap-python",
-            'theHamsta/nvim-dap-virtual-text'
+            -- 'theHamsta/nvim-dap-virtual-text'
         },
         -- configuration
         config = function()
@@ -18,7 +18,8 @@ return {
             require("dap-python").setup(python_path)
 
             -- use virtual texts
-            require("nvim-dap-virtual-text").setup({})
+            -- this produces a problem with debug error messages!
+            -- require("nvim-dap-virtual-text").setup({})
 
             -- DAP UI
             -- setup
