@@ -29,6 +29,49 @@ return {
             -- pylsp with capabilities
             require("lspconfig").pylsp.setup({
                 capabilities = capabilities,
+                settings = {
+                    pylsp = {
+                        plugins = {
+                            pydocstyle = {
+                                ignore = {
+                                    'E303',
+                                    'W503',
+                                    'E203',
+                                    'E501',
+                                    'W391',
+                                    'W291',
+                                    'E226',
+                                }
+                            },
+                            pycodestyle = {
+                                ignore = {
+                                    'E303',
+                                    'W503',
+                                    'E203',
+                                    'E501',
+                                    'W391',
+                                    'W291',
+                                    'E226',
+                                },
+                                maxLineLength = 80,
+                            },
+                            flake8 = {
+                                ignore = {
+                                    'E303',
+                                    'W503',
+                                    'E203',
+                                    'E501',
+                                    'W391',
+                                    'W291',
+                                    'E226',
+                                }
+                            },
+                            autopep8 = {
+                                enabled = false,
+                            },
+                        }
+                    }
+                }
             })
 
             -- -- basedpyright for even better type hints
