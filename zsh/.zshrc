@@ -112,3 +112,6 @@ if [[ "$(hostname -s)" == "makalu69" ]]; then
     alias lazygit="$HOME/lazygit/lazygit"
     export EDITOR="$HOME/nvim/nvim-v0.10.4/bin/nvim"
 fi
+
+# make stow available at path variable
+export PATH="$HOME/.local/bin:$PATH"
