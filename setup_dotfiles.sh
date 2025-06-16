@@ -51,3 +51,16 @@ if [ -f "$HOME/.ssh/config" ]; then
     chmod 600 "$HOME/.ssh/config"
     echo "Set permissions on ~/.ssh/config"
 fi
+
+# install nvim 0.10.4 from prebuild release into ~/.local/opt
+if [ ! -d "$HOME/.local/opt/nvim" ]; then
+    echo "Installing Neovim v0.10.4..."
+    wget -P ~/.local/opt https://github.com/neovim/neovim-releases/releases/download/v0.10.4/nvim-linux-x86_64.tar.gz
+    tar xzvf ~/.local/opt/nvim-linux-x86_64.tar.gz -C ~/.local/opt/
+    rm -rf ~/.local/opt/nvim-linux-x86_64.tar.gz
+    mv ~/.local/opt/nvim-linux-x86_64 ~/.local/opt/nvim
+    ln -fs ~/.local/opt/nvim/bin/nvim ~/.local/bin/nvim
+    echo "Installed and symlinked nvim"
+else
+    echo "Neovim already installed at ~/.local/opt/nvim - skipping"
+fi

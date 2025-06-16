@@ -108,10 +108,9 @@ export NUMEXPR_NUM_THREADS=1
 # MAKALU69 has old nvim -> so use prebuild nvim 0.10.4 which is under ~/nvim/nvim_v0.10.4/bin/nvim if on Makalu as alias for nvim
 # also lazygit alias, which lies in home/lazygit
 if [[ "$(hostname -s)" == "makalu69" ]]; then
-	alias nvim="$HOME/nvim/nvim-v0.10.4/bin/nvim"
     alias lazygit="$HOME/lazygit/lazygit"
     export EDITOR="$HOME/nvim/nvim-v0.10.4/bin/nvim"
 fi
 
-# make stow available at path variable
+# make .local stuff available at path variable
 export PATH="$HOME/.local/bin:$PATH"
