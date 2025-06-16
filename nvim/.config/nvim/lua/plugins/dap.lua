@@ -59,19 +59,19 @@ return {
             end, { desc = "kill debugging" })
             -- step in over out in my vim logic
             -- (j - one step down (= step into))
-            vim.keymap.set('n', '<leader>dj', function()
+            vim.keymap.set('n', '<leader>dl', function()
                 dap.step_into()
             end, { desc = "step into" })
             -- (l - one step right (= step over))
-            vim.keymap.set('n', '<leader>dl', function()
+            vim.keymap.set('n', '<leader>dj', function()
                 dap.step_over()
             end, { desc = "step over" })
             -- (k - one step up (= step out))
-            vim.keymap.set('n', '<leader>dk', function()
+            vim.keymap.set('n', '<leader>dh', function()
                 dap.step_out()
             end, { desc = "step out" })
             -- hover variable under cursor
-            vim.keymap.set("n", "<leader>dh", function()
+            vim.keymap.set("n", "<leader>di", function()
                 dapui.eval(nil, { enter = true })
             end, { desc = "hover variable under cursor during debugging" })
             -- close floating window under cursor
