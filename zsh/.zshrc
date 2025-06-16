@@ -111,5 +111,8 @@ if [[ "$(hostname -s)" == "makalu69" ]]; then
     export EDITOR="$HOME/nvim/nvim-v0.10.4/bin/nvim"
 fi
 
+# kitty +kitten ssh alias
+alias kssh="kitty +kitten ssh"
+
 # make .local stuff available at path variable
 export PATH="$HOME/.local/bin:$PATH"
