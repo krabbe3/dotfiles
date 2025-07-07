@@ -112,7 +112,8 @@ if [[ "$(hostname -s)" == "makalu69" ]]; then
 fi
 
 # kitty +kitten ssh alias
-alias kssh="kitty +kitten ssh"
+# and automatic port forwarding for matplotlib webagg!
+alias kssh="kitty +kitten ssh -L 8988:localhost:8988"
 
 # make .local stuff available at path variable
 export PATH="$HOME/.local/bin:$PATH"
