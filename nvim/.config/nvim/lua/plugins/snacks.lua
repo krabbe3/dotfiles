@@ -10,6 +10,7 @@ return {
                 notify = true,
             },
             dashboard = { enabled = true },
+            dim = { enabled = true },
             indent = { enabled = true },
             notifier = { enabled = true },
             quickfile = { enabled = true },
