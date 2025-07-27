@@ -12,6 +12,7 @@ return {
             dashboard = { enabled = true },
             dim = { enabled = true },
             indent = { enabled = true },
+            input = { enabled = true },
             notifier = { enabled = true },
             quickfile = { enabled = true },
             scope = { enabled = true },
