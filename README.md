@@ -6,6 +6,7 @@ WIP
 ## Installation
 
 - clone the repo
+    - git clone --recurse-submodules
 - then softlink all dotfiles by executing the script ./setup_dotfiles.sh
 
 ## Requirements
