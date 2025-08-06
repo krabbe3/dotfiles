@@ -1,7 +1,8 @@
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/dotfiles/zsh/.oh-my-zsh"
 # custom folder for themes
-export ZSH_CUSTOM="$ZSH"
+#export ZSH_CUSTOM="$ZSH"
+export ZSH_CUSTOM="$HOME/dotfiles/zsh/custom_plugins"
 
 # theme
 ZSH_THEME="gnzh"
@@ -20,6 +21,8 @@ zstyle ':omz:update' frequency 13
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
+# change ZSH_CUSTOM to load custom plugins
+#export ZSH_CUSTOM="$HOME/dotfiles/zsh/plugins"
 plugins=(git zsh-autosuggestions fzf-zsh-plugin)
 
 # zsh-syntax-highlighting has to be the last one
