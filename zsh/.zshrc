@@ -78,6 +78,6 @@ export PATH="$HOME/.local/bin:$PATH"
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 # key bindings
 # accept suggestion <C-l>
-bindkey '^l' autosuggest-accept
+bindkey '^y' autosuggest-accept
 
 
