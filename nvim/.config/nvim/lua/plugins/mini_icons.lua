@@ -1,11 +1,11 @@
-return{
+return {
     {
         {
             "echasnovski/mini.icons",
             opts = {},
             lazy = true,
             specs = {
-              { "nvim-tree/nvim-web-devicons", enabled = true, optional = true },
+                { "nvim-tree/nvim-web-devicons", enabled = true, optional = true },
             },
 
             config = function()
@@ -13,6 +13,6 @@ return{
                     style = "glyph",
                 })
             end,
-  },        
+        },
     }
 }

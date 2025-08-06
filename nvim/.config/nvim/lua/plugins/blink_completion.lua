@@ -16,8 +16,15 @@ return {
             -- C-e: Hide menu
             -- C-k: Toggle signature help (if signature.enabled = true)
             -- See :h blink-cmp-config-keymap for defining your own keymap
-            keymap = { preset = 'default' },
-            -- C-y: accept
+            keymap = {
+                -- C-y: accept
+                preset = 'default',
+                ['<Tab>'] = { 'select_next', 'fallback' },
+                ['<S-Tab>'] = { 'select_prev', 'fallback' },
+                ['<C-f>'] = { 'scroll_documentation_up', 'fallback' },
+                ['<C-b>'] = { 'scroll_documentation_down', 'fallback' },
+
+            },
 
             appearance = {
                 use_nvim_cmp_as_default = false,
