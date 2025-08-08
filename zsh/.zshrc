@@ -77,7 +77,7 @@ export PATH="$HOME/.local/bin:$PATH"
 # suggestion selection strategy
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 # key bindings
-# accept suggestion <C-l>
+# accept suggestion <C-y>
 bindkey '^y' autosuggest-accept
 
 
