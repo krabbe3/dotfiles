@@ -42,6 +42,10 @@ keymap("n", "<leader><leader>", function()
     vim.cmd("so")
 end)
 
+-- split with leader | - like in tmux
+vim.keymap.set('n', '<leader>|', ':vsplit<CR>', { desc = 'Vertical split' })
+vim.keymap.set('n', '<leader>-', ':split<CR>', { desc = 'Horizontal split' })
+
 
 -- INSERT mode keymaps
 keymap('i', 'jk', '<ESC>', opts)
