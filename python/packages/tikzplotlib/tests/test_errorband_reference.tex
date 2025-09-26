@@ -1,0 +1,63 @@
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+
+\begin{axis}[
+tick align=outside,
+tick pos=left,
+title={Simple plot},
+x grid style={darkgray176},
+xlabel={t},
+xmajorgrids,
+xmin=0, xmax=6.2831853,
+xtick style={color=black},
+y grid style={darkgray176},
+ylabel={sin(t)},
+ymajorgrids,
+ymin=-1.1561622, ymax=1.1561622,
+ytick style={color=black}
+]
+\path [fill=black, fill opacity=0.2, very thin]
+(axis cs:0,-0.1)
+--(axis cs:0,0.1)
+--(axis cs:0.62831853,0.68778525)
+--(axis cs:1.2566371,1.0510565)
+--(axis cs:1.8849556,1.0510565)
+--(axis cs:2.5132741,0.68778525)
+--(axis cs:3.1415927,0.1)
+--(axis cs:3.7699112,-0.48778525)
+--(axis cs:4.3982297,-0.85105652)
+--(axis cs:5.0265482,-0.85105652)
+--(axis cs:5.6548668,-0.48778525)
+--(axis cs:6.2831853,0.1)
+--(axis cs:6.2831853,-0.1)
+--(axis cs:6.2831853,-0.1)
+--(axis cs:5.6548668,-0.68778525)
+--(axis cs:5.0265482,-1.0510565)
+--(axis cs:4.3982297,-1.0510565)
+--(axis cs:3.7699112,-0.68778525)
+--(axis cs:3.1415927,-0.1)
+--(axis cs:2.5132741,0.48778525)
+--(axis cs:1.8849556,0.85105652)
+--(axis cs:1.2566371,0.85105652)
+--(axis cs:0.62831853,0.48778525)
+--(axis cs:0,-0.1)
+--cycle;
+
+\addplot [semithick, black]
+table {%
+0 0
+0.62831853 0.58778525
+1.2566371 0.95105652
+1.8849556 0.95105652
+2.5132741 0.58778525
+3.1415927 1.2246468e-16
+3.7699112 -0.58778525
+4.3982297 -0.95105652
+5.0265482 -0.95105652
+5.6548668 -0.58778525
+6.2831853 -2.4492936e-16
+};
+\end{axis}
+
+\end{tikzpicture}

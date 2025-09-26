@@ -1,0 +1,30 @@
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+
+\begin{axis}[
+log basis x={10},
+log basis y={10},
+tick align=outside,
+tick pos=left,
+x grid style={darkgray176},
+xmin=0.50118723, xmax=1995262.3,
+xmode=log,
+xtick style={color=black},
+y grid style={darkgray176},
+ymin=0.25118864, ymax=3.9810717e+12,
+ymode=log,
+ytick style={color=black}
+]
+\addplot [line width=0.84pt, steelblue31119180]
+table {%
+1 1
+31.622777 1000
+1000 1000000
+31622.777 1e+09
+1000000 1e+12
+};
+\end{axis}
+
+\end{tikzpicture}

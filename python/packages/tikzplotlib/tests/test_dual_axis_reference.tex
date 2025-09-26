@@ -1,0 +1,80 @@
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+
+\begin{axis}[
+tick align=outside,
+x grid style={darkgray176},
+xmin=-10, xmax=210,
+xtick pos=right,
+xtick style={color=black},
+y grid style={darkgray176},
+ymin=-5, ymax=105,
+ytick pos=left,
+ytick style={color=black}
+]
+\addplot [semithick, steelblue31119180]
+table {%
+0 0
+0.52631579 0.27700831
+1.0526316 1.1080332
+1.5789474 2.4930748
+2.1052632 4.432133
+2.6315789 6.9252078
+3.1578947 9.9722992
+3.6842105 13.573407
+4.2105263 17.728532
+4.7368421 22.437673
+5.2631579 27.700831
+5.7894737 33.518006
+6.3157895 39.889197
+6.8421053 46.814404
+7.3684211 54.293629
+7.8947368 62.32687
+8.4210526 70.914127
+8.9473684 80.055402
+9.4736842 89.750693
+10 100
+};
+\end{axis}
+
+\begin{axis}[
+axis y line=right,
+tick align=outside,
+x grid style={darkgray176},
+xmin=-10, xmax=210,
+xtick pos=left,
+xtick style={color=black},
+y grid style={darkgray176},
+ymin=-100, ymax=2100,
+ytick pos=right,
+ytick style={color=black},
+yticklabel style={anchor=west}
+]
+\addplot [semithick, steelblue31119180]
+table {%
+0 0
+10.526316 5.5401662
+21.052632 22.160665
+31.578947 49.861496
+42.105263 88.642659
+52.631579 138.50416
+63.157895 199.44598
+73.684211 271.46814
+84.210526 354.57064
+94.736842 448.75346
+105.26316 554.01662
+115.78947 670.36011
+126.31579 797.78393
+136.84211 936.28809
+147.36842 1085.8726
+157.89474 1246.5374
+168.42105 1418.2825
+178.94737 1601.108
+189.47368 1795.0139
+200 2000
+};
+\end{axis}
+
+\end{tikzpicture}

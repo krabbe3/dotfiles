@@ -1,0 +1,164 @@
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{green01270}{RGB}{0,127,0}
+\definecolor{lavender255204255}{RGB}{255,204,255}
+\definecolor{violet255127255}{RGB}{255,127,255}
+
+\begin{groupplot}[group style={group size=2 by 2}]
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+title={box1},
+x grid style={darkgray176},
+xmin=0, xmax=1,
+xtick style={color=black},
+y grid style={darkgray176},
+ymin=0, ymax=1,
+ytick style={color=black}
+]
+\path [draw=violet255127255, fill=lavender255204255]
+(axis cs:0.3,0.3)
+--(axis cs:0.7,0.3)
+.. controls (axis cs:0.76666667,0.3) and (axis cs:0.8,0.33333333) .. (axis cs:0.8,0.4)
+--(axis cs:0.8,0.6)
+.. controls (axis cs:0.8,0.66666667) and (axis cs:0.76666667,0.7) .. (axis cs:0.7,0.7)
+--(axis cs:0.3,0.7)
+.. controls (axis cs:0.23333333,0.7) and (axis cs:0.2,0.66666667) .. (axis cs:0.2,0.6)
+--(axis cs:0.2,0.4)
+.. controls (axis cs:0.2,0.33333333) and (axis cs:0.23333333,0.3) .. (axis cs:0.3,0.3)
+--cycle;
+\draw (axis cs:0.1,0.8) node[
+  scale=0.5,
+  anchor=base west,
+  text=black,
+  rotate=0.0
+]{boxstyle='round, pad=0.1'};
+\path [draw=black]
+(axis cs:0.3,0.4)
+--(axis cs:0.7,0.4)
+--(axis cs:0.7,0.6)
+--(axis cs:0.3,0.6)
+--cycle;
+
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+title={box2},
+x grid style={darkgray176},
+xmin=0, xmax=1,
+xtick style={color=black},
+y grid style={darkgray176},
+ymin=0, ymax=1,
+ytick style={color=black}
+]
+\path [draw=violet255127255, fill=lavender255204255]
+(axis cs:0.4,0.3)
+--(axis cs:0.6,0.3)
+.. controls (axis cs:0.73333333,0.3) and (axis cs:0.8,0.36666667) .. (axis cs:0.8,0.5)
+--(axis cs:0.8,0.5)
+.. controls (axis cs:0.8,0.63333333) and (axis cs:0.73333333,0.7) .. (axis cs:0.6,0.7)
+--(axis cs:0.4,0.7)
+.. controls (axis cs:0.26666667,0.7) and (axis cs:0.2,0.63333333) .. (axis cs:0.2,0.5)
+--(axis cs:0.2,0.5)
+.. controls (axis cs:0.2,0.36666667) and (axis cs:0.26666667,0.3) .. (axis cs:0.4,0.3)
+--cycle;
+\draw (axis cs:0.1,0.8) node[
+  scale=0.5,
+  anchor=base west,
+  text=black,
+  rotate=0.0,
+  align=left
+]{boxstyle='round,pad=0.1\\rounding\_size=0.2'};
+\path [draw=black]
+(axis cs:0.3,0.4)
+--(axis cs:0.7,0.4)
+--(axis cs:0.7,0.6)
+--(axis cs:0.3,0.6)
+--cycle;
+
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+title={box3},
+x grid style={darkgray176},
+xmin=0, xmax=1,
+xtick style={color=black},
+y grid style={darkgray176},
+ymin=0, ymax=1,
+ytick style={color=black}
+]
+\path [draw=violet255127255, fill=lavender255204255]
+(axis cs:0.3,0.2)
+--(axis cs:0.7,0.2)
+.. controls (axis cs:0.83333333,0.2) and (axis cs:0.9,0.26666667) .. (axis cs:0.9,0.4)
+--(axis cs:0.9,0.6)
+.. controls (axis cs:0.9,0.73333333) and (axis cs:0.83333333,0.8) .. (axis cs:0.7,0.8)
+--(axis cs:0.3,0.8)
+.. controls (axis cs:0.16666667,0.8) and (axis cs:0.1,0.73333333) .. (axis cs:0.1,0.6)
+--(axis cs:0.1,0.4)
+.. controls (axis cs:0.1,0.26666667) and (axis cs:0.16666667,0.2) .. (axis cs:0.3,0.2)
+--cycle;
+\draw (axis cs:0.1,0.8) node[
+  scale=0.5,
+  anchor=base west,
+  text=black,
+  rotate=0.0,
+  align=left
+]{boxstyle='round,pad=0.1'\\mutation\_scale=2};
+\path [draw=black]
+(axis cs:0.3,0.4)
+--(axis cs:0.7,0.4)
+--(axis cs:0.7,0.6)
+--(axis cs:0.3,0.6)
+--cycle;
+
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+title={box4},
+x grid style={darkgray176},
+xmin=-0.5, xmax=1.5,
+xtick style={color=black},
+y grid style={darkgray176},
+ymin=0, ymax=1,
+ytick style={color=black}
+]
+\path [draw=violet255127255, fill=lavender255204255]
+(axis cs:0.3,0.25)
+--(axis cs:0.7,0.25)
+.. controls (axis cs:0.9,0.25) and (axis cs:1,0.3) .. (axis cs:1,0.4)
+--(axis cs:1,0.6)
+.. controls (axis cs:1,0.7) and (axis cs:0.9,0.75) .. (axis cs:0.7,0.75)
+--(axis cs:0.3,0.75)
+.. controls (axis cs:0.1,0.75) and (axis cs:0,0.7) .. (axis cs:0,0.6)
+--(axis cs:0,0.4)
+.. controls (axis cs:0,0.3) and (axis cs:0.1,0.25) .. (axis cs:0.3,0.25)
+--cycle;
+\draw (axis cs:0.1,0.8) node[
+  scale=0.5,
+  anchor=base west,
+  text=black,
+  rotate=0.0,
+  align=left
+]{boxstyle='round, pad=0.3'\\mutation\_aspect=.5};
+\path [draw=green01270]
+(axis cs:0.3,0.2)
+--(axis cs:0.7,0.2)
+.. controls (axis cs:0.83333333,0.2) and (axis cs:0.9,0.26666667) .. (axis cs:0.9,0.4)
+--(axis cs:0.9,0.6)
+.. controls (axis cs:0.9,0.73333333) and (axis cs:0.83333333,0.8) .. (axis cs:0.7,0.8)
+--(axis cs:0.3,0.8)
+.. controls (axis cs:0.16666667,0.8) and (axis cs:0.1,0.73333333) .. (axis cs:0.1,0.6)
+--(axis cs:0.1,0.4)
+.. controls (axis cs:0.1,0.26666667) and (axis cs:0.16666667,0.2) .. (axis cs:0.3,0.2)
+--cycle;
+\path [draw=black]
+(axis cs:0.3,0.4)
+--(axis cs:0.7,0.4)
+--(axis cs:0.7,0.6)
+--(axis cs:0.3,0.6)
+--cycle;
+\end{groupplot}
+
+\end{tikzpicture}

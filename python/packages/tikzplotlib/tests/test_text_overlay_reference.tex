@@ -1,0 +1,164 @@
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{lightgray204}{RGB}{204,204,204}
+\definecolor{pink255204204}{RGB}{255,204,204}
+\definecolor{salmon255127127}{RGB}{255,127,127}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+
+\begin{axis}[
+legend cell align={left},
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(0.03,0.97)},
+  anchor=north west,
+  draw=lightgray204
+},
+tick align=outside,
+tick pos=left,
+x grid style={darkgray176},
+xmin=-0.25, xmax=5.25,
+xtick style={color=black},
+y grid style={darkgray176},
+ymin=-1.25, ymax=26.25,
+ytick style={color=black}
+]
+\addplot [semithick, steelblue31119180]
+table {%
+0 0
+0.10204082 0.010412328
+0.20408163 0.041649313
+0.30612245 0.093710954
+0.40816327 0.16659725
+0.51020408 0.2603082
+0.6122449 0.37484382
+0.71428571 0.51020408
+0.81632653 0.666389
+0.91836735 0.84339858
+1.0204082 1.0412328
+1.122449 1.2598917
+1.2244898 1.4993753
+1.3265306 1.7596835
+1.4285714 2.0408163
+1.5306122 2.3427738
+1.6326531 2.665556
+1.7346939 3.0091628
+1.8367347 3.3735943
+1.9387755 3.7588505
+2.0408163 4.1649313
+2.1428571 4.5918367
+2.244898 5.0395668
+2.3469388 5.5081216
+2.4489796 5.997501
+2.5510204 6.5077051
+2.6530612 7.0387339
+2.755102 7.5905873
+2.8571429 8.1632653
+2.9591837 8.756768
+3.0612245 9.3710954
+3.1632653 10.006247
+3.2653061 10.662224
+3.3673469 11.339025
+3.4693878 12.036651
+3.5714286 12.755102
+3.6734694 13.494377
+3.7755102 14.254477
+3.877551 15.035402
+3.9795918 15.837151
+4.0816327 16.659725
+4.1836735 17.503124
+4.2857143 18.367347
+4.3877551 19.252395
+4.4897959 20.158267
+4.5918367 21.084965
+4.6938776 22.032486
+4.7959184 23.000833
+4.8979592 23.990004
+5 25
+};
+\addlegendentry{a graph}
+\draw (axis cs:1,5) node[
+  scale=2.5,
+  fill=pink255204204,
+  draw=salmon255127127,
+  line width=0.4pt,
+  inner sep=2pt,
+  rounded corners,
+  dash pattern=on 0.4pt off 1.2pt on 2.4pt off 1.2pt,
+  anchor=south,
+  text=red,
+  rotate=30.0
+]{\itshape test1};
+\draw (axis cs:3,6) node[
+  scale=2.5,
+  fill=pink255204204,
+  draw=salmon255127127,
+  line width=0.4pt,
+  inner sep=3pt,
+  text=blue,
+  rotate=330.0
+]{\bfseries test2};
+\draw (axis cs:4,8) node[
+  fill=pink255204204,
+  draw=salmon255127127,
+  line width=0.4pt,
+  inner sep=3pt,
+  single arrow,
+  dashed,
+  text=blue,
+  rotate=90.0
+]{\bfseries test3};
+\draw (axis cs:4,16) node[
+  fill=pink255204204,
+  draw=salmon255127127,
+  line width=0.4pt,
+  inner sep=3pt,
+  single arrow,
+  shape border rotate=180,
+  dotted,
+  text=blue,
+  rotate=90.0
+]{\bfseries test4};
+\draw (axis cs:2,18) node[
+  fill=pink255204204,
+  draw=salmon255127127,
+  line width=0.4pt,
+  inner sep=3pt,
+  double arrow,
+  text=blue,
+  rotate=0.0
+]{test5};
+\draw (axis cs:1,20) node[
+  fill=pink255204204,
+  draw=salmon255127127,
+  line width=0.4pt,
+  inner sep=3pt,
+  circle,
+  text=blue,
+  rotate=0.0
+]{test6};
+\draw (axis cs:3,23) node[
+  fill=pink255204204,
+  draw=salmon255127127,
+  line width=0.4pt,
+  inner sep=3pt,
+  decorate,
+  decoration={snake,amplitude=0.5,segment length=3},
+  text=blue,
+  rotate=0.0
+]{test7};
+\draw (axis cs:3,20) node[
+  fill=pink255204204,
+  draw=salmon255127127,
+  line width=0.4pt,
+  inner sep=3pt,
+  decorate,
+  decoration={zigzag,amplitude=0.5,segment length=3},
+  text=blue,
+  rotate=0.0
+]{test8};
+\end{axis}
+
+\end{tikzpicture}

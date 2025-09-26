@@ -1,0 +1,14 @@
+*.pyc
+*.swp
+*.png
+*.pdf
+doc/_build/
+MANIFEST
+dist/
+build/
+.cache/
+*.egg-info/
+.pytest_cache/
+.tox/
+mytikz.tex
+test.tex

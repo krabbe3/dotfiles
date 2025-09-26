@@ -1,0 +1,31 @@
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+
+\begin{axis}[
+tick align=outside,
+tick pos=left,
+x grid style={darkgray176},
+xmin=-0.05, xmax=1.05,
+xtick style={color=black},
+y grid style={darkgray176},
+ymin=-0.45, ymax=9.45,
+ytick style={color=black}
+]
+\addplot [semithick, steelblue31119180, mark=o, mark size=3, mark options={solid,fill opacity=0}]
+table {%
+0 0
+0.11111111 1
+0.22222222 2
+0.33333333 3
+0.44444444 4
+0.55555556 5
+0.66666667 6
+0.77777778 7
+0.88888889 8
+1 9
+};
+\end{axis}
+
+\end{tikzpicture}

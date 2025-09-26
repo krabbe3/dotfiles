@@ -1,0 +1,136 @@
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{green}{RGB}{0,128,0}
+
+\begin{groupplot}[group style={group size=1 by 2}]
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+title={A tale of 2 subplots},
+x grid style={darkgray176},
+xmajorgrids,
+xmin=-0.245, xmax=5.145,
+xtick style={color=black},
+y grid style={darkgray176},
+ylabel={Damped oscillation},
+ymajorgrids,
+ymin=-0.68685719, ymax=1.0803265,
+ytick style={color=black}
+]
+\addplot [semithick, blue, mark=*, mark size=3, mark options={solid,fill=green}, only marks]
+table {%
+0 1
+0.4 -0.54230031
+0.8 0.13885029
+1.2 0.09307413
+1.6 -0.16333771
+2 0.13533528
+2.4 -0.073392366
+2.8 0.018791343
+3.2 0.012596214
+3.6 -0.022105356
+4 0.018315639
+4.4 -0.0099325766
+4.8 0.0025431317
+};
+\addplot [semithick, black, dashed]
+table {%
+0 1
+0.1 0.73202885
+0.2 0.25300172
+0.3 -0.22892542
+0.4 -0.54230031
+0.5 -0.60653066
+0.6 -0.44399794
+0.7 -0.1534533
+0.8 0.13885029
+0.9 0.32892176
+1 0.36787944
+1.1 0.26929836
+1.2 0.09307413
+1.3 -0.084216956
+1.4 -0.19950113
+1.5 -0.22313016
+1.6 -0.16333771
+1.7 -0.056452314
+1.8 0.051080166
+1.9 0.12100355
+2 0.13533528
+2.1 0.099069332
+2.2 0.034240059
+2.3 -0.030981687
+2.4 -0.073392366
+2.5 -0.082084999
+2.6 -0.060088587
+2.7 -0.020767646
+2.8 0.018791343
+2.9 0.04451472
+3 0.049787068
+3.1 0.03644557
+3.2 0.012596214
+3.3 -0.011397526
+3.4 -0.026999543
+3.5 -0.030197383
+3.6 -0.022105356
+3.7 -0.0076399898
+3.8 0.0069129487
+3.9 0.01637605
+4 0.018315639
+4.1 0.013407576
+4.2 0.0046338881
+4.3 -0.0041929153
+4.4 -0.0099325766
+4.5 -0.011108997
+4.6 -0.0081321059
+4.7 -0.0028105952
+4.8 0.0025431317
+4.9 0.0060244123
+};
+
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+x grid style={darkgray176},
+xlabel={time (s)},
+xmajorgrids,
+xmin=-0.095, xmax=1.995,
+xtick style={color=black},
+y grid style={darkgray176},
+ylabel={Undamped},
+ymajorgrids,
+ymin=-1.1, ymax=1.1,
+ytick style={color=black}
+]
+\addplot [semithick, red, mark=*, mark size=3, mark options={solid}, only marks]
+table {%
+0 1
+0.1 0.80901699
+0.2 0.30901699
+0.3 -0.30901699
+0.4 -0.80901699
+0.5 -1
+0.6 -0.80901699
+0.7 -0.30901699
+0.8 0.30901699
+0.9 0.80901699
+1 1
+1.1 0.80901699
+1.2 0.30901699
+1.3 -0.30901699
+1.4 -0.80901699
+1.5 -1
+1.6 -0.80901699
+1.7 -0.30901699
+1.8 0.30901699
+1.9 0.80901699
+};
+\end{groupplot}
+
+\draw ({$(current bounding box.south west)!0.5!(current bounding box.south east)$}|-{$(current bounding box.south west)!0.98!(current bounding box.north west)$}) node[
+  scale=0.9,
+  anchor=north,
+  text=black,
+  rotate=0.0
+]{\bfseries PLOT TITLE};
+\end{tikzpicture}
