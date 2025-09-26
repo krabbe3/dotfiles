@@ -27,22 +27,31 @@ builtin_colors = {
 
 
 def _get_closest_colour_name(rgb):
-    match = None
+    # match = None
+    # mindiff = 1.0e15
+    # for h, name in webcolors.CSS3_HEX_TO_NAMES.items():
+    #    r = int(h[1:3], 16)
+    #    g = int(h[3:5], 16)
+    #    b = int(h[5:7], 16)
+
+    #    diff = (rgb[0] - r) ** 2 + (rgb[1] - g) ** 2 + (rgb[2] - b) ** 2
+    #    if diff < mindiff:
+    #        match = name
+    #        mindiff = diff
+
+    #    if mindiff == 0:
+    #        break
+
+    # new implementation
     mindiff = 1.0e15
-    for h, name in webcolors.CSS3_HEX_TO_NAMES.items():
-        r = int(h[1:3], 16)
-        g = int(h[3:5], 16)
-        b = int(h[5:7], 16)
-
-        diff = (rgb[0] - r) ** 2 + (rgb[1] - g) ** 2 + (rgb[2] - b) ** 2
-        if diff < mindiff:
-            match = name
-            mindiff = diff
-
-        if mindiff == 0:
-            break
-
-    return match, mindiff
+    min_colours = {}
+    for name in webcolors.names("css3"):
+        r_c, g_c, b_c = webcolors.name_to_rgb(name)
+        rd = (r_c - rgb[0]) ** 2
+        gd = (g_c - rgb[1]) ** 2
+        bd = (b_c - rgb[2]) ** 2
+        min_colours[(rd + gd + bd)] = name
+    return min_colours[min(min_colours.keys())], mindiff
 
 
 def mpl_color2xcolor(data, matplotlib_color):
@@ -79,6 +88,9 @@ def mpl_color2xcolor(data, matplotlib_color):
             name = f"{name}{rgb255[0]}"
         else:
             name = f"{name}{rgb255[0]}{rgb255[1]}{rgb255[2]}"
-    data["custom colors"][name] = ("RGB", ",".join([str(val) for val in rgb255]))
+    data["custom colors"][name] = (
+        "RGB",
+        ",".join([str(val) for val in rgb255]),
+    )
 
     return data, name, my_col

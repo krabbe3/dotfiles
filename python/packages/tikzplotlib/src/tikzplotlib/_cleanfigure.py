@@ -7,7 +7,9 @@ from mpl_toolkits import mplot3d
 STEP_DRAW_STYLES = ["steps-pre", "steps-post", "steps-mid"]
 
 
-def clean_figure(fig=None, target_resolution: int = 600, scale_precision: float = 1.0):
+def clean_figure(
+    fig=None, target_resolution: int = 600, scale_precision: float = 1.0
+):
     """Cleans figure as a preparation for tikz export.
     This will minimize the number of points required for the tikz figure.
     If the figure has subplots, it will recursively clean then up.
@@ -90,7 +92,9 @@ def clean_figure(fig=None, target_resolution: int = 600, scale_precision: float 
     elif fig == "gcf":  # tikzplotlib syntax
         fig = plt.gcf()
     _recursive_cleanfigure(
-        fig, target_resolution=target_resolution, scale_precision=scale_precision
+        fig,
+        target_resolution=target_resolution,
+        scale_precision=scale_precision,
     )
 
 
@@ -197,10 +201,14 @@ def _clean_containers(axes):
         if isinstance(container, mpl.container.BarContainer):
             import warnings
 
-            warnings.warn("Cleaning Bar Container (bar plot) is not supported yet.")
+            warnings.warn(
+                "Cleaning Bar Container (bar plot) is not supported yet."
+            )
 
 
-def _cleanline(fighandle, axhandle, linehandle, target_resolution, scale_precision):
+def _cleanline(
+    fighandle, axhandle, linehandle, target_resolution, scale_precision
+):
     """Clean a 2D or 3D Line plot figure.
 
     :param fighandle: matplotlib figure object
@@ -229,7 +237,9 @@ def _cleanline(fighandle, axhandle, linehandle, target_resolution, scale_precisi
         visual_data = _get_visual_data(axhandle, data, is3D)
         hasLines = _line_has_lines(linehandle)
 
-        data = _prune_outside_box(xLim, yLim, data, visual_data, is3D, hasLines)
+        data = _prune_outside_box(
+            xLim, yLim, data, visual_data, is3D, hasLines
+        )
         visual_data = _get_visual_data(axhandle, data, is3D)
 
         if not is3D:
@@ -380,11 +390,11 @@ def _replace_data_with_NaN(data, id_replace, is3D):
     else:
         xData, yData = _split_data_2D(data)
 
-    xData[id_replace] = np.NaN
-    yData[id_replace] = np.NaN
+    xData[id_replace] = np.nan
+    yData[id_replace] = np.nan
     if is3D:
         zData = zData.copy()
-        zData[id_replace] = np.NaN
+        zData[id_replace] = np.nan
 
     if is3D:
         new_data = _stack_data_3D(xData, yData, zData)
@@ -492,7 +502,10 @@ def _remove_NaNs(data):
     else:
         id_remove = id_remove[
             np.concatenate(
-                [_diff(id_remove, axis=0) == 1, np.array([False]).reshape((-1,))]
+                [
+                    _diff(id_remove, axis=0) == 1,
+                    np.array([False]).reshape((-1,)),
+                ]
             )
         ]
 
@@ -504,7 +517,11 @@ def _remove_NaNs(data):
         id_remove = np.arange(len(data))
     else:
         id_remove = np.concatenate(
-            [np.arange(0, id_first), id_remove, np.arange(id_last + 1, len(data))]
+            [
+                np.arange(0, id_first),
+                id_remove,
+                np.arange(id_last + 1, len(data)),
+            ]
         )
     data = np.delete(data, id_remove, axis=0)
     return data
@@ -687,10 +704,12 @@ def _prune_outside_box(xLim, yLim, data, visual_data, is3D, hasLines):
     if hasLines:
         segvis = _segment_visible(visual_data, dataIsInBox, xLim, yLim)
         shouldPlot = np.logical_or(
-            shouldPlot, np.concatenate([np.array([False]).reshape((-1,)), segvis])
+            shouldPlot,
+            np.concatenate([np.array([False]).reshape((-1,)), segvis]),
         )
         shouldPlot = np.logical_or(
-            shouldPlot, np.concatenate([segvis, np.array([False]).reshape((-1,))])
+            shouldPlot,
+            np.concatenate([segvis, np.array([False]).reshape((-1,))]),
         )
 
     id_replace = np.array([[]])
@@ -746,7 +765,9 @@ def _move_points_closer(xLim, yLim, data):
 
     dataIsInLargeBox = _isInBox(data, largeXlim, largeYlim)
 
-    dataIsInLargeBox = np.logical_or(dataIsInLargeBox, np.any(np.isnan(data), axis=1))
+    dataIsInLargeBox = np.logical_or(
+        dataIsInLargeBox, np.any(np.isnan(data), axis=1)
+    )
 
     id_replace = np.argwhere(np.logical_not(dataIsInLargeBox))
 
@@ -820,7 +841,9 @@ def _simplify_line(
     if type(target_resolution) not in [list, np.ndarray, np.array]:
         if np.isinf(target_resolution) or target_resolution == 0:
             return data
-    elif any(np.logical_or(np.isinf(target_resolution), target_resolution == 0)):
+    elif any(
+        np.logical_or(np.isinf(target_resolution), target_resolution == 0)
+    ):
         return data
     W, H = _get_width_height_in_pixels(fighandle, target_resolution)
     xDataVis, yDataVis = _split_data_2D(visual_data)
@@ -881,7 +904,9 @@ def _simplify_line(
             # Line simplification
             if np.size(x) > 2:
                 mask = _opheim_simplify(x, y, tol)
-                id_remove[ii] = np.argwhere(mask == 0).reshape((-1,)) + lineStart[ii]
+                id_remove[ii] = (
+                    np.argwhere(mask == 0).reshape((-1,)) + lineStart[ii]
+                )
         # Merge the indices of the line segments
         # original code : id_remove = cat(1, id_remove{:})
         id_remove = np.concatenate(id_remove)
@@ -907,12 +932,15 @@ def _pixelate(x, y, xToPix, yToPix):
     :returns: mask
     """
     mult = 2
-    dataPixel = np.round(np.stack([x * xToPix * mult, y * yToPix * mult], axis=1))
+    dataPixel = np.round(
+        np.stack([x * xToPix * mult, y * yToPix * mult], axis=1)
+    )
     id_orig = np.argsort(dataPixel[:, 0])
     dataPixelSorted = dataPixel[id_orig, :]
 
     m = np.logical_or(
-        np.diff(dataPixelSorted[:, 0]) != 0, np.diff(dataPixelSorted[:, 1]) != 0
+        np.diff(dataPixelSorted[:, 0]) != 0,
+        np.diff(dataPixelSorted[:, 1]) != 0,
     )
     mask_sorted = np.concatenate([np.array([True]).reshape((-1,)), m], axis=0)
 
@@ -1116,8 +1144,12 @@ def _segment_visible(data, dataIsInBox, xLim, yLim):
         X2 = data[idx + 1, :]
 
         # One of the neighbors is inside the box and the other is finite
-        thisVisible = np.logical_and(dataIsInBox[idx], np.all(np.isfinite(X2), 1))
-        nextVisible = np.logical_and(dataIsInBox[idx + 1], np.all(np.isfinite(X1), 1))
+        thisVisible = np.logical_and(
+            dataIsInBox[idx], np.all(np.isfinite(X2), 1)
+        )
+        nextVisible = np.logical_and(
+            dataIsInBox[idx + 1], np.all(np.isfinite(X1), 1)
+        )
 
         bottomLeft, topLeft, bottomRight, topRight = _corners2D(xLim, yLim)
 
@@ -1221,7 +1253,9 @@ def _get_projection_matrix(axhandle):
     yLim = axhandle.get_ylim3d()
     zLim = axhandle.get_zlim3d()
 
-    aspectRatio = np.array([xLim[1] - xLim[0], yLim[1] - xLim[0], zLim[1] - zLim[0]])
+    aspectRatio = np.array(
+        [xLim[1] - xLim[0], yLim[1] - xLim[0], zLim[1] - zLim[0]]
+    )
     aspectRatio /= aspectRatio[-1]
     scaleMatrix = np.diag(np.concatenate([aspectRatio, np.array([1.0])]))
 
@@ -1294,10 +1328,13 @@ def _cross_lines(X1, X2, X3, X4):
         # NOTE: watch out for broadcasting
         rhs = -X1.reshape((-1, 2)) + X3.reshape((-1, 2))
         Rotate = np.array([[0, -1], [1, 0]])
-        Lambda[id_detA, 0] = (rhs[id_detA, :] @ Rotate @ (X4 - X3).T) / detA[id_detA]
+        Lambda[id_detA, 0] = (rhs[id_detA, :] @ Rotate @ (X4 - X3).T) / detA[
+            id_detA
+        ]
         Lambda[id_detA, 1] = (
             np.sum(
-                -(X2[id_detA, :] - X1[id_detA, :]) @ Rotate * rhs[id_detA, :], axis=1
+                -(X2[id_detA, :] - X1[id_detA, :]) @ Rotate * rhs[id_detA, :],
+                axis=1,
             )
             / detA[id_detA]
         )
