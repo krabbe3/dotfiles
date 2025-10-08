@@ -27,6 +27,8 @@ opt.incsearch = true
 opt.ignorecase = true
 opt.smartcase = true
 
+
+
 -- line numbers autocommands
 -- Set relative line numbers in normal, visual, and select modes
 opt.relativenumber = true
