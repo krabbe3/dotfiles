@@ -2,6 +2,7 @@ return {
     {
         'nvim-treesitter/nvim-treesitter',
         build = ":TSUpdate",
+        branch = "master",
 
         -- configuration
         config = function()
