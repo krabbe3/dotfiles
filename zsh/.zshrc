@@ -52,7 +52,6 @@ fi
 alias kssh="kitty +kitten ssh -L 8988:localhost:8988"
 
 # extend path variable
-export PATH="$HOME/.local/bin:$PATH"
 export PATH="/Users/llm/.lmstudio/bin:$PATH"
 
 # zsh plugin settings
