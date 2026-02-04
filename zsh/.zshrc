@@ -2,10 +2,10 @@
 export ZSH="$HOME/dotfiles/zsh/.oh-my-zsh"
 # custom folder for themes
 #export ZSH_CUSTOM="$ZSH"
-export ZSH_CUSTOM="$HOME/dotfiles/zsh/custom_plugins"
+export ZSH_CUSTOM="$HOME/dotfiles/zsh/custom"
 
 # theme
-ZSH_THEME="gnzh"
+ZSH_THEME="gnzh_conda"
 
 # hyphen insensitive search (-_)
 HYPHEN_INSENSITIVE="true"
@@ -62,6 +62,8 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 # key bindings
 # accept suggestion <C-y>
 bindkey '^y' autosuggest-accept
+
+export CONDA_CHANGEPS1=false
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
