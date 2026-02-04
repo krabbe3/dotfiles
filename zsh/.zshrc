@@ -35,21 +35,6 @@ source $ZSH/oh-my-zsh.sh
 # Select nvim as editor
 export EDITOR='nvim'
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/lorenz/miniforge3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/lorenz/miniforge3/etc/profile.d/conda.sh" ]; then
-        . "/Users/lorenz/miniforge3/etc/profile.d/conda.sh"
-    else
-        export PATH="/Users/lorenz/miniforge3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
-
 # add VS Code to PATH variable
 export MKL_NUM_THREADS=1
 export OMP_NUM_THREADS=1
@@ -66,11 +51,11 @@ fi
 # and automatic port forwarding for matplotlib webagg!
 alias kssh="kitty +kitten ssh -L 8988:localhost:8988"
 
-# make .local stuff available at path variable
+# extend path variable
 export PATH="$HOME/.local/bin:$PATH"
+export PATH="/Users/llm/.lmstudio/bin:$PATH"
 
 # zsh plugin settings
-
 # autosuggestions
 # suggestion selection strategy
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
@@ -78,8 +63,20 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 # accept suggestion <C-y>
 bindkey '^y' autosuggest-accept
 
-
-
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/Users/lorenz/miniforge3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/Users/lorenz/miniforge3/etc/profile.d/conda.sh" ]; then
+        . "/Users/lorenz/miniforge3/etc/profile.d/conda.sh"
+    else
+        export PATH="/Users/lorenz/miniforge3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
 # >>> mamba initialize >>>
 # !! Contents within this block are managed by 'mamba shell init' !!
 export MAMBA_EXE='/Users/lorenz/miniforge3/bin/mamba';
