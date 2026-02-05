@@ -90,3 +90,5 @@ else
 fi
 unset __mamba_setup
 # <<< mamba initialize <<<
+# activate conda base env
+conda activate
