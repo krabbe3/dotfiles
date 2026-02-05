@@ -64,29 +64,21 @@ bindkey '^y' autosuggest-accept
 
 # conda prompt
 export CONDA_CHANGEPS1=false
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('~/miniforge3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "~/miniforge3/etc/profile.d/conda.sh" ]; then
-        . "~/miniforge3/etc/profile.d/conda.sh"
+
+# >>> Miniforge / Mamba initialization >>>
+if [ -d "$HOME/miniforge3" ]; then
+    # Initialize Conda/Mamba shell
+    __conda_setup="$("$HOME/miniforge3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"
+    if [ $? -eq 0 ]; then
+        eval "$__conda_setup"
     else
-        export PATH="~/miniforge3/bin:$PATH"
+        export PATH="$HOME/miniforge3/bin:$PATH"
+    fi
+    unset __conda_setup
+
+    # Activate base environment only after shell hook is loaded
+    if [[ -z "$CONDA_DEFAULT_ENV" ]]; then
+        conda activate
     fi
 fi
-unset __conda_setup
-# <<< conda initialize <<<
-# >>> mamba initialize >>>
-# !! Contents within this block are managed by 'mamba shell init' !!
-export MAMBA_EXE='~/miniforge3/bin/mamba';
-export MAMBA_ROOT_PREFIX='~/miniforge3';
-__mamba_setup="$("$MAMBA_EXE" shell hook --shell zsh --root-prefix "$MAMBA_ROOT_PREFIX" 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__mamba_setup"
-else
-    alias mamba="$MAMBA_EXE"  # Fallback on help from mamba activate
-fi
-unset __mamba_setup
-# <<< mamba initialize <<<
+# <<< Miniforge / Mamba initialization <<<
