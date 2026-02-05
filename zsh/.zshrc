@@ -5,7 +5,7 @@ export ZSH="$HOME/dotfiles/zsh/.oh-my-zsh"
 export ZSH_CUSTOM="$HOME/dotfiles/zsh/custom"
 
 # theme
-ZSH_THEME="gnzh_conda"
+ZSH_THEME="bira"
 
 # hyphen insensitive search (-_)
 HYPHEN_INSENSITIVE="true"
@@ -23,7 +23,7 @@ zstyle ':omz:update' frequency 13
 # Add wisely, as too many plugins slow down shell startup.
 # change ZSH_CUSTOM to load custom plugins
 #export ZSH_CUSTOM="$HOME/dotfiles/zsh/plugins"
-plugins=(git zsh-autosuggestions fzf-zsh-plugin)
+plugins=(git conda-env virtualenv zsh-autosuggestions fzf-zsh-plugin)
 
 # zsh-syntax-highlighting has to be the last one
 #plugins+=("zsh-syntax-highlighting")
@@ -91,4 +91,10 @@ fi
 unset __mamba_setup
 # <<< mamba initialize <<<
 # activate conda base env
-conda activate
+#conda activate
+
+
+function virtualenv_info {
+ [ $CONDA_PROMPT_MODIFIER ] && echo `basename $CONDA_PROMPT_MODIFIER`
+}
+
