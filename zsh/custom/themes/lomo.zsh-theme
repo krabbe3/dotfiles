@@ -25,7 +25,7 @@ else
 fi
 
 PROMPT="╭─${user_host}${current_dir}${conda_prompt} ${vcs_branch}
-╰─$PR_PROMPT${user_symbol}"
+╰─$PR_PROMPT${user_symbol} "
 RPROMPT="%B${return_code}%b"
 
 ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg[yellow]%}‹"
