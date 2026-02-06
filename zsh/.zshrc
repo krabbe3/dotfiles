@@ -44,7 +44,8 @@ export NUMEXPR_NUM_THREADS=1
 # also lazygit alias, which lies in home/lazygit
 if [[ "$(hostname -s)" == "makalu69" ]]; then
     alias lazygit="$HOME/lazygit/lazygit"
-    export EDITOR="$HOME/nvim/nvim-v0.10.4/bin/nvim"
+    export EDITOR="$HOME/.local/bin/nvim"
+    alias nvim="$HOME/.local/bin/nvim"
 fi
 
 # kitty +kitten ssh alias

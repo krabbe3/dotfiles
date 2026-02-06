@@ -11,8 +11,11 @@ WIP
 
 ## Requirements
 
-- tested for neovim version 0.10.4
-- i think needs at least >= 0.10 and at most <= 0.11
+- tested for neovim version 0.10.4, 0.11.5 and 0.11.6
+- at some point I have to make a shift towards 0.11.5+
+    - right now, this is done by using a stale branch for treesitter
+    - and some deprecated lspconfig configuration
+    - needs to be changed
 
 ## Config Files
 - [Neovim](nvim/README.md)
