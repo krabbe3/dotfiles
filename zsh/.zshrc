@@ -66,6 +66,9 @@ bindkey '^y' autosuggest-accept
 # add docker host env var
 export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
 
+# ai sandbox stuff
+alias aivim='PROJECT_DIR=$(pwd) UID=$(id -u) GID=$(id -g) docker compose -f ~/ai-sandbox/docker-compose.yml run --rm coder'
+
 # conda stuff
 # conda prompt
 export CONDA_CHANGEPS1=false
