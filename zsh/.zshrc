@@ -7,6 +7,9 @@ export ZSH_CUSTOM="$HOME/dotfiles/zsh/custom"
 # theme
 ZSH_THEME="lomo"
 
+# add local bin to path
+export PATH=$HOME/bin:$PATH
+
 # hyphen insensitive search (-_)
 HYPHEN_INSENSITIVE="true"
 
@@ -52,9 +55,6 @@ fi
 # and automatic port forwarding for matplotlib webagg!
 alias kssh="kitty +kitten ssh -L 8988:localhost:8988"
 
-# extend path variable
-export PATH="/Users/llm/.lmstudio/bin:$PATH"
-
 # zsh plugin settings
 # autosuggestions
 # suggestion selection strategy
@@ -63,9 +63,12 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 # accept suggestion <C-y>
 bindkey '^y' autosuggest-accept
 
+# add docker host env var
+export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+
+# conda stuff
 # conda prompt
 export CONDA_CHANGEPS1=false
-
 # >>> Miniforge / Mamba initialization >>>
 if [ -d "$HOME/miniforge3" ]; then
     # Initialize Conda/Mamba shell
