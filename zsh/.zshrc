@@ -89,3 +89,5 @@ if [ -d "$HOME/miniforge3" ]; then
     fi
 fi
 # <<< Miniforge / Mamba initialization <<<
+
+. "$HOME/.local/bin/env"
