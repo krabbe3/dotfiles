@@ -67,7 +67,7 @@ bindkey '^y' autosuggest-accept
 export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
 
 # ai sandbox stuff
-alias aivim='PROJECT_DIR=$(pwd) UID=$(id -u) GID=$(id -g) docker compose -f ~/ai-sandbox/docker-compose.yml run --rm coder'
+alias aivim='PROJECT_DIR=$(pwd) PROJECT_NAME=$(basename "$PWD") docker compose -f ~/ai-sandbox/docker-compose.yml run --rm -it coder'
 
 # conda stuff
 # conda prompt
