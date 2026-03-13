@@ -8,7 +8,7 @@ export ZSH_CUSTOM="$HOME/dotfiles/zsh/custom"
 ZSH_THEME="lomo"
 
 # add local bin to path
-export PATH=$HOME/bin:$PATH
+export PATH="$HOME/bin:$PATH"
 
 # hyphen insensitive search (-_)
 HYPHEN_INSENSITIVE="true"
@@ -35,21 +35,14 @@ plugins+=("fast-syntax-highlighting")
 
 source $ZSH/oh-my-zsh.sh
 
+# export .local/bin for user packages
+export PATH="$HOME/.local/bin:$PATH"
 # Select nvim as editor
 export EDITOR='nvim'
 
-# add VS Code to PATH variable
 export MKL_NUM_THREADS=1
 export OMP_NUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1
-
-# MAKALU69 has old nvim -> so use prebuild nvim 0.10.4 which is under ~/nvim/nvim_v0.10.4/bin/nvim if on Makalu as alias for nvim
-# also lazygit alias, which lies in home/lazygit
-if [[ "$(hostname -s)" == "makalu69" ]]; then
-    alias lazygit="$HOME/lazygit/lazygit"
-    export EDITOR="$HOME/.local/bin/nvim"
-    alias nvim="$HOME/.local/bin/nvim"
-fi
 
 # kitty +kitten ssh alias
 # and automatic port forwarding for matplotlib webagg!
