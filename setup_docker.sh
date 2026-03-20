@@ -6,6 +6,8 @@ find . -name ".DS_Store" -exec rm {} \;
 ###### INSTALL PACKAGES ######
 # install nvim in the whole container
 mkdir -p /opt
+rm -rf /opt/nvim
+rm -rf /bin/nvim
 curl -L https://github.com/neovim/neovim-releases/releases/download/v0.11.5/nvim-linux-x86_64.tar.gz -o /opt/nvim.tar.gz
 mkdir -p /opt/nvim
 tar xzvf /opt/nvim.tar.gz -C /opt/nvim --strip-components=1
