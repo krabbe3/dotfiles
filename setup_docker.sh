@@ -16,7 +16,7 @@ ln -sf /opt/nvim/bin/nvim /bin/nvim
 PROGRAMS=(nvim zsh tmux)
 OLD_DOTFILES="backups/dotfile_bk_$(date -u +"%Y%m%d%H%M%S")"
 for program in ${PROGRAMS[@]}; do
-  stow -v --target=/home/node $program
+  stow -v --target=$HOME $program
   echo "Configuring $program"
 done
 echo "Finished softlinking files!"
