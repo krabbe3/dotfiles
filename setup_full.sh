@@ -50,7 +50,7 @@ if [ -d ~/.zprezto/runcoms ]; then
     done
 fi
 for program in ${PROGRAMS[@]}; do
-  stow -v --target=$HOME $program
+  stow -v --target=/home/node $program
   echo "Configuring $program"
 done
 echo "Finished softlinking files!"
