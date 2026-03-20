@@ -5,14 +5,13 @@ find . -name ".DS_Store" -exec rm {} \;
 
 ###### INSTALL PACKAGES ######
 if [[ "$(hostname -s)" == "makalu69" ]]; then
-    # all user packages land in .local/opt
-    mkdir -p $HOME/.local/opt
-    # old nvim requires old glibc release from neovim-releases (new versions are under neovin/releases)!
-    curl -L https://github.com/neovim/neovim-releases/releases/download/v0.11.5/nvim-linux-x86_64.tar.gz -o $HOME/.local/opt/nvim.tar.gz
-    mkdir -p $HOME/.local/opt/nvim
-    tar xzvf $HOME/.local/opt/nvim.tar.gz -C $HOME/.local/opt/nvim --strip-components=1
-    rm $HOME/.local/opt/nvim.tar.gz
-    ln -sf $HOME/.local/opt/nvim/bin/nvim $HOME/.local/bin/nvim
+    # install nvim in the whole container
+    mkdir -p /opt
+    curl -L https://github.com/neovim/neovim-releases/releases/download/v0.11.5/nvim-linux-x86_64.tar.gz -o opt/nvim.tar.gz
+    mkdir -p /opt/nvim
+    tar xzvf /opt/nvim.tar.gz -C /opt/nvim --strip-components=1
+    rm /opt/nvim.tar.gz
+    ln -sf /opt/nvim/bin/nvim /bin/nvim
 fi
 
 ###### CREATE SOFTLINKS ######
