@@ -3,12 +3,20 @@ return {
         'nvim-treesitter/nvim-treesitter',
         build = ":TSUpdate",
         branch = "master",
-
         -- configuration
         config = function()
+            local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+            parser_config.dockerfile = {
+                install_info = {
+                    url = "https://github.com/camdencheek/tree-sitter-dockerfile",
+                    files = { "src/parser.c", "src/scanner.c" },
+                    branch = "main",
+                },
+                filetype = "dockerfile",
+            }
             require('nvim-treesitter.configs').setup({
                 -- featured languages
-                ensure_installed = { "vimdoc", "toml", "yaml", "c", "python", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", "regex" },
+                ensure_installed = { "vimdoc", "toml", "yaml", "c", "python", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", "regex", "bash" },
 
                 -- Install parsers synchronously (only applied to `ensure_installed`)
                 sync_install = false,
