@@ -1,4 +1,5 @@
 model = "qwen3-vl:8b"
+output_filename_template = "{{file_basename}}.md"
 prompt = """###
 Context (the last few lines of markdown from the previous page):
 {context}
@@ -14,4 +15,8 @@ Strictly adhere to the following output and formatting rules:
 3. Structural Diagrams: If a hand-drawn diagram, flowchart, block tree, or structural relationship can be mapped logically, convert it into a clean, syntactically valid code block wrapped in a ```mermaid syntax. Do not write a textual summary of the drawing; map the nodes and relational arrows directly to code.
 4. Indeterminate Images: If the image is corrupted, entirely unreadable, or its contents are completely ambiguous, output exactly nothing. Do not explain why, do not apologize, and do not output placeholder symbols.
 5. Zero Meta-Commentary: Do not add casual introductory prefaces ("Here is your transcription:") or concluding remarks. Output ONLY the finalized markdown payload.
+"""
+
+template = """
+{{llm_output}}
 """
