@@ -22,7 +22,7 @@ if [[ "$(hostname -s)" == "makalu69" ]]; then
 fi
 
 ###### CREATE SOFTLINKS ######
-PROGRAMS=(nvim zsh ssh git kitty tmux lazygit)
+PROGRAMS=(nvim zsh ssh git kitty tmux lazygit supernote)
 OLD_DOTFILES="backups/dotfile_bk_$(date -u +"%Y%m%d%H%M%S")"
 
 mkdir $OLD_DOTFILES
