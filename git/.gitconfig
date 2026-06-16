@@ -6,3 +6,5 @@
     autoSetupRemote = true
 [pull]
 	rebase = true
+[url "git@gitlab.tu-ilmenau.de:"]
+	insteadOf = https://gitlab.tu-ilmenau.de/
