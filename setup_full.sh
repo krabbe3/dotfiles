@@ -4,22 +4,34 @@
 find . -name ".DS_Store" -exec rm {} \;
 
 ###### INSTALL PACKAGES ######
-if [[ "$(hostname -s)" == "makalu69" ]]; then
+if [[ "$(hostname -s)" =~ ^makalu[0-9]+$ ]]; then
     # all user packages land in .local/opt
     mkdir -p $HOME/.local/opt
     # old nvim requires old glibc release from neovim-releases (new versions are under neovin/releases)!
-    curl -L https://github.com/neovim/neovim-releases/releases/download/v0.11.5/nvim-linux-x86_64.tar.gz -o $HOME/.local/opt/nvim.tar.gz
-    mkdir -p $HOME/.local/opt/nvim
-    tar xzvf $HOME/.local/opt/nvim.tar.gz -C $HOME/.local/opt/nvim --strip-components=1
-    rm $HOME/.local/opt/nvim.tar.gz
-    ln -sf $HOME/.local/opt/nvim/bin/nvim $HOME/.local/bin/nvim
-    # install lazygit
+    #curl -L https://github.com/neovim/neovim-releases/releases/download/v0.11.5/nvim-linux-x86_64.tar.gz -o $HOME/.local/opt/nvim.tar.gz
+    #mkdir -p $HOME/.local/opt/nvim
+    #tar xzvf $HOME/.local/opt/nvim.tar.gz -C $HOME/.local/opt/nvim --strip-components=1
+    #rm $HOME/.local/opt/nvim.tar.gz
+    #ln -sf $HOME/.local/opt/nvim/bin/nvim $HOME/.local/bin/nvim
+    ## install lazygit
     curl -L https://github.com/jesseduffield/lazygit/releases/download/v0.53.0/lazygit_0.53.0_Linux_x86_64.tar.gz -o $HOME/.local/opt/lazygit.tar.gz
     mkdir -p $HOME/.local/opt/lazygit
     tar xzvf $HOME/.local/opt/lazygit.tar.gz -C $HOME/.local/opt/lazygit
     rm $HOME/.local/opt/lazygit.tar.gz
     ln -sf $HOME/.local/opt/lazygit/lazygit $HOME/.local/bin/lazygit
+    # stow
+    curl -L https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz -o $HOME/.local/opt/stow.tar.gz
+    mkdir -p $HOME/.local/opt/stow
+    tar xzvf $HOME/.local/opt/stow.tar.gz -C $HOME/.local/opt/stow
+    cd $HOME/.local/opt/stow/stow-*
+    ./configure --prefix=$HOME/.local
+    make
+    make install
 fi
+
+###### ADD .local TO PATH ######
+export PATH="$HOME/.local/bin:$PATH"
+cd $HOME/dotfiles
 
 ###### CREATE SOFTLINKS ######
 PROGRAMS=(nvim zsh ssh git kitty tmux lazygit supernote)
