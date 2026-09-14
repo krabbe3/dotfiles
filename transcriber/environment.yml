@@ -1,0 +1,10 @@
+name: transcriber
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.12
+  - pip
+  - pillow
+  - requests
+  - pip:
+      - supernotelib
