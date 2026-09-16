@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Resolve real path even if invoked via symlink
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DUNE_BIN_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+usage() {
+  cat <<EOF
+Usage: dune <command> [options]
+
+Available commands:
+  ai       Launch isolated AI sandbox (worktree + dev container)
+           Options:
+             -p, --py, --python <version>   Specify Python version (default: 3.10)
+             -r, --rebuild                  Force clean rebuild (--no-cache)
+  help     Show this message
+EOF
+  exit 0
+}
+
+if [[ $# -eq 0 ]]; then
+  usage
+fi
+
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+  ai)
+    exec "$DUNE_BIN_DIR/dune-ai" "$@"
+    ;;
+  help|-h|--help)
+    usage
+    ;;
+  *)
+    echo "Error: Unknown command '$COMMAND'" >&2
+    usage
+    ;;
+esac

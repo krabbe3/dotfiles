@@ -1,0 +1,44 @@
+# syntax=docker/dockerfile:1.4
+ARG PYTHON_VERSION=3.10
+FROM python:${PYTHON_VERSION}-slim
+
+ENV PIP_BREAK_SYSTEM_PACKAGES=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    SHELL=/bin/zsh
+
+# System tools and shell requirements
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    zsh \
+    stow \
+    ca-certificates \
+    fzf \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set default shell to zsh
+RUN chsh -s /bin/zsh root
+
+# Configure Git safe directories & default sandbox agent identity
+RUN git config --global --add safe.directory /workspace \
+    && git config --global --add safe.directory /root/dotfiles \
+    && git config --global user.name "Dune Agent" \
+    && git config --global user.email "agent@dune.local"
+
+# Provision dotfiles and run Neovim/tooling setup
+USER root
+ENV HOME=/root
+WORKDIR $HOME/dotfiles
+
+RUN git config --global url."https://github.com/".insteadOf "git@github.com:" \
+    && git clone --recurse-submodules https://github.com/krabbe3/dotfiles.git /root/dotfiles \
+    && chmod +x /root/dotfiles/setup_docker.sh \
+    && /bin/bash /root/dotfiles/setup_docker.sh
+
+# Base Python development tooling
+RUN pip install --no-cache-dir black pip-tools ipython
+
+WORKDIR /workspace
+CMD ["/bin/zsh"]

@@ -1,0 +1,45 @@
+services:
+  dev:
+    container_name: dune-${SANDBOX_NAME:-runner}
+    hostname: dune-${SANDBOX_NAME:-runner}
+    image: dune-python:${PYTHON_VERSION:-3.10}
+    build:
+      context: .
+      dockerfile: ${SANDBOX_DOCKERFILE:-Dockerfile.python}
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.10}
+    user: "0:0"
+    working_dir: /workspace
+    volumes:
+      # Isolated shallow clone mounted directly to /workspace
+      - ${TARGET_PROJECT}:/workspace:rw
+
+      # Persistent caches and Neovim states (stored in dune/data/)
+      - ../../data/nvim/share:/root/.local/share/nvim:rw
+      - ../../data/nvim/state:/root/.local/state/nvim:rw
+      - ../../data/pip-cache:/root/.cache/pip:rw
+    environment:
+      - HOME=/root
+      - TERM=xterm-256color
+      # Prevent Git "dubious ownership" errors on the mounted clone
+      - GIT_CONFIG_GLOBAL=/root/.gitconfig
+      - GIT_CONFIG_SYSTEM=/dev/null
+      - GIT_SAFE_DIR=/workspace
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - FOWNER
+    stdin_open: true
+    tty: true
+    env_file:
+      # 1. Base AI sandbox defaults / API keys in sandboxes/ai/.env
+      - path: .env
+        required: false
+      # 2. Project-level .env overrides
+      - path: ${PROJECT_ENV_FILE:-/dev/null}
+        required: false

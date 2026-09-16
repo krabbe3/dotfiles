@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 1. Resolve DUNE_DIR dynamically relative to this script
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DUNE_DIR="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
+SANDBOX_DIR="$DUNE_DIR/sandboxes/ai"
+
+TARGET_DIR="$(pwd)"
+PROJECT_NAME="$(basename "$TARGET_DIR")"
+
+# 2. Parse flags: --py <ver> and --rebuild
+SELECTED_PY=""
+FORCE_REBUILD=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -p|--py|--python)
+      SELECTED_PY="$2"
+      shift 2
+      ;;
+    -r|--rebuild)
+      FORCE_REBUILD=true
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+export PYTHON_VERSION="${SELECTED_PY:-3.10}"
+echo "==> Runtime: Python $PYTHON_VERSION"
+
+# 3. Isolation: Ephemeral Shallow Clone (Hides History, Allows Commits)
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  IS_GIT=true
+  GIT_ROOT="$(git rev-parse --show-toplevel)"
+  TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+  BRANCH_NAME="dune/agent-latest"
+  CLONE_BASE_DIR="/tmp/.dune-clones"
+  CLONE_DIR="${CLONE_BASE_DIR}/${PROJECT_NAME}-${TIMESTAMP}"
+
+  if ! git -C "$GIT_ROOT" diff --quiet || ! git -C "$GIT_ROOT" diff --cached --quiet; then
+    echo "==> Warning: Working tree has uncommitted edits. Only committed HEAD is cloned."
+  fi
+
+  mkdir -p "$CLONE_BASE_DIR"
+
+  echo "==> Git repo detected at: $GIT_ROOT"
+  echo "==> Creating isolated shallow clone at: $CLONE_DIR"
+
+  git clone --depth 1 "file://$GIT_ROOT" "$CLONE_DIR" >/dev/null 2>&1
+  git -C "$CLONE_DIR" remote remove origin >/dev/null 2>&1 || true
+
+  RUN_DIR="$CLONE_DIR"
+
+  # 4. Handle .env files
+  if [[ -f "$TARGET_DIR/.env" ]]; then
+    echo "==> Detected project .env: injecting into sandbox"
+    export PROJECT_ENV_FILE="$TARGET_DIR/.env"
+    cp "$TARGET_DIR/.env" "$CLONE_DIR/.env"
+  elif [[ -f "$SANDBOX_DIR/.env" ]]; then
+    echo "==> Using default sandbox .env"
+    export PROJECT_ENV_FILE="/dev/null"
+    cp "$SANDBOX_DIR/.env" "$CLONE_DIR/.env"
+  else
+    export PROJECT_ENV_FILE="/dev/null"
+  fi
+
+  # Trap cleanup on exit, interrupt, or error
+  cleanup() {
+    echo ""
+    echo "==> Cleaning up sandbox clone..."
+
+    if [ -d "$CLONE_DIR" ]; then
+      SANDBOX_HEAD="$(git -C "$CLONE_DIR" rev-parse HEAD 2>/dev/null || true)"
+      HOST_HEAD="$(git -C "$GIT_ROOT" rev-parse HEAD 2>/dev/null || true)"
+
+      if [ -n "$SANDBOX_HEAD" ] && [ "$SANDBOX_HEAD" != "$HOST_HEAD" ]; then
+        echo "==> Ingesting sandbox commits into branch: $BRANCH_NAME"
+        git -C "$GIT_ROOT" fetch "$CLONE_DIR" "HEAD:${BRANCH_NAME}" --force >/dev/null 2>&1 || true
+        echo "==> Changes preserved on host branch: $BRANCH_NAME"
+        echo "==> To review:   git diff HEAD..$BRANCH_NAME"
+        echo "==> To merge:    git merge $BRANCH_NAME"
+        echo "==> To discard:  git branch -D $BRANCH_NAME"
+      else
+        echo "==> No new commits detected in sandbox."
+      fi
+
+      rm -rf "$CLONE_DIR" 2>/dev/null || true
+    fi
+    return 0
+  }
+  trap cleanup EXIT INT TERM
+
+else
+  IS_GIT=false
+  RUN_DIR="$TARGET_DIR"
+  echo "==> Non-git directory: mounting directly."
+
+  if [[ -f "$TARGET_DIR/.env" ]]; then
+    export PROJECT_ENV_FILE="$TARGET_DIR/.env"
+  else
+    export PROJECT_ENV_FILE="/dev/null"
+  fi
+fi
+
+export TARGET_PROJECT="$RUN_DIR"
+export SANDBOX_NAME="${PROJECT_NAME}-agent"
+
+cd "$SANDBOX_DIR"
+mkdir -p "$DUNE_DIR/data/pip-cache" "$DUNE_DIR/data/nvim/share" "$DUNE_DIR/data/nvim/state"
+
+# 5. Build Python image on demand or on forced rebuild
+if [ "$FORCE_REBUILD" = true ]; then
+  echo "==> Rebuild requested. Building dune-python:${PYTHON_VERSION} (clean)..."
+  DOCKER_BUILDKIT=1 docker compose build --no-cache dev
+elif ! docker image inspect "dune-python:${PYTHON_VERSION}" >/dev/null 2>&1; then
+  echo "==> Image dune-python:${PYTHON_VERSION} not found locally. Building..."
+  DOCKER_BUILDKIT=1 docker compose build dev
+fi
+
+echo "==> Spawning Dune sandbox for: $RUN_DIR"
+
+# 6. Launch container, auto-install project dependencies, then start interactive zsh
+DOCKER_BUILDKIT=1 docker compose run --rm dev /bin/zsh -c '
+  if [ -f "pyproject.toml" ]; then
+    echo "==> Found pyproject.toml: resolving dependencies..."
+    pip install --cache-dir /root/.cache/pip -e .
+  elif [ -f "requirements.txt" ]; then
+    echo "==> Found requirements.txt: resolving dependencies..."
+    pip install --cache-dir /root/.cache/pip -r requirements.txt
+  fi
+
+  exec /bin/zsh
+'
