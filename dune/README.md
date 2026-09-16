@@ -4,6 +4,7 @@ An ephemeral, isolated development environment designed for autonomous coding ag
 
 ## Architecture Overview
 
+```Plaintext
 Host Repository (HEAD)
        │
        ▼ (Ephemeral shallow clone: git clone --depth 1, remotes stripped)
@@ -17,6 +18,7 @@ Host Git Object Store
        │
        ▼ (git fetch ... HEAD:dune/agent-latest --force)
 Host Branch: dune/agent-latest (Ready for review/merge)
+```
 
 ## Key Features
 
