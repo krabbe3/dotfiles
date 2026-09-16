@@ -33,6 +33,7 @@ Host Branch: dune/agent-latest (Ready for review/merge)
 
 Place the files in your dotfiles repository:
 
+```Plaintext
 dotfiles/dune/
 ├── bin/
 │   └── dune-ai                 # CLI entrypoint and lifecycle manager
@@ -44,6 +45,7 @@ dotfiles/dune/
 └── data/                       # Host-cached runtime state (gitignored)
     ├── pip-cache/
     └── nvim/
+```
 
 ## Installation & Setup
 
