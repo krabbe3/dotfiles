@@ -15,10 +15,11 @@ usage() {
 Usage: dune <command> [options]
 
 Available commands:
-  ai       Launch isolated AI sandbox (worktree + dev container)
-           Options:
-             -p, --py, --python <version>   Specify Python version (default: 3.10)
-             -r, --rebuild                  Force clean rebuild (--no-cache)
+  ai       Launch isolated AI sandbox (shallow clone + dev container)
+             Options:
+               -p, --py, --python <version>   Specify Python version (default: 3.10)
+               -r, --rebuild                  Force clean rebuild (--no-cache)
+  sync     Fetch in-flight commits from active sandbox to dune/agent-latest
   help     Show this message
 EOF
   exit 0
@@ -34,6 +35,9 @@ shift
 case "$COMMAND" in
   ai)
     exec "$DUNE_BIN_DIR/dune-ai" "$@"
+    ;;
+  sync)
+    exec "$DUNE_BIN_DIR/dune-sync" "$@"
     ;;
   help|-h|--help)
     usage

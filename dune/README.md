@@ -8,12 +8,15 @@ An ephemeral, isolated development environment designed for autonomous coding ag
 Host Repository (HEAD)
        │
        ▼ (Ephemeral shallow clone: git clone --depth 1, remotes stripped)
-/tmp/.dune-clones/<project>-<timestamp>/
+/tmp/.dune-clones/<project>-<timestamp>/  ◄── Symlink: <project>-active
        │
        ▼ (Bind mount)
 Container Workspace (/workspace)
        │  - Agent runs commands, installs packages, makes commits
-       ▼ (User exits container)
+       │
+       ├─► Mid-flight: `dune sync` pulls active commits (to dune/agent-latest) to host anytime
+       │
+       ▼ (User exits container: exit / Ctrl+D)
 Host Git Object Store
        │
        ▼ (git fetch ... HEAD:dune/agent-latest --force)
@@ -22,10 +25,11 @@ Host Branch: dune/agent-latest (Ready for review/merge)
 
 ## Key Features
 
-- Complete History Isolation: Clones strictly at HEAD with --depth 1 and purges the origin remote. The agent cannot inspect past repository history or push to remote remotes.
-- Autonomous Checkpoints: The agent can commit freely to Git. Commits remain isolated within the container until review.
-- Single Review Reference: Upon exit, all commits made inside the container are force-fetched to a single host branch pointer: dune/agent-latest. No branch proliferation or dangling tags.
-- Clean Host State: The ephemeral directory in /tmp/.dune-clones/ is automatically deleted via exit trap. Your active host working tree remains completely untouched.
+- Complete History Isolation: Clones strictly at HEAD with --depth 1 and purges the origin remote. The agent cannot inspect past repository history or push to remotes.
+- Continuous Checkpoints: The agent can commit freely to Git. Commits remain isolated within the container until synced or reviewed.
+- Mid-Flight Syncing: A stable symlink (/tmp/.dune-clones/<project>-active) allows pulling commits into host Git branches while the container remains running.
+- Single Review Reference: Upon sync or exit, commits are fetched to a single host branch pointer: dune/agent-latest.
+- Clean Host State: The ephemeral directory and active symlink in /tmp/.dune-clones/ are automatically deleted via exit trap. Your active host working tree remains completely untouched.
 - Environment Passthrough: Merges default container variables with any existing project .env file automatically.
 - Persistent Cache Mounts: Dedicated bind mounts for pip and Neovim state cache build artifacts across multiple invocations.
 
@@ -36,7 +40,9 @@ Place the files in your dotfiles repository:
 ```Plaintext
 dotfiles/dune/
 ├── bin/
-│   └── dune-ai                 # CLI entrypoint and lifecycle manager
+│   ├── dune                    # entry-level dispatcher for dune
+│   ├── dune-ai                 # CLI entrypoint and lifecycle manager
+    └── dune-sync               # Mid-flight sync helper
 ├── sandboxes/
 │   └── ai/
 │       ├── .env                # Global default sandbox environment variables
@@ -134,43 +140,55 @@ dune ai --rebuild
 
 ## Review & Integration Workflow
 
-When you exit the container (exit or Ctrl-D), dune-ai checks whether commits were created inside the sandbox. If new commits exist, they are written to dune/agent-latest on your host.
+1. Work Inside the Container
 
-1. Review the Changes
-
-Compare the agent's work against the commit you started from:
+Commit early and often as rollback checkpoints inside the sandbox:
 
 ```Bash
+git add .
+git commit -m "feat: parse schema structure"
+```
+
+2. Live Sync While Container is Running (Optional)
+
+From a separate terminal or tmux pane on your host:
+
+```Bash
+dune sync
 git diff HEAD..dune/agent-latest
-```
-
-View the individual commit messages and per-commit patches:
-
-```Bash
-git log -p HEAD..dune/agent-latest
-```
-
-2. Merge into Your Branch
-
-To keep the agent's commit history intact:
-
-```Bash
 git merge dune/agent-latest
-git branch -d dune/agent-latest
 ```
+The container continues running without interruption.
 
-To collapse all agent work into a single clean commit on your branch:
+3. Exit & Final Ingestion
+
+When finished inside the container:
 
 ```Bash
-git merge --squash dune/agent-latest
-git commit -m "feat: implement feature via dune agent"
-git branch -d dune/agent-latest
+exit
 ```
 
-3. Discard the Work
+The exit trap automatically ingests any remaining commits into branch `dune/agent-latest` and removes `/tmp` artifacts.
 
-If the agent's run was unsatisfactory, discard the review branch entirely:
+4. Merge or Discard on Host
 
-```Bash
-git branch -D dune/agent-latest
-```
+    - Standard Merge:
+
+    ```Bash
+    git merge dune/agent-latest
+    git branch -d dune/agent-latest
+    ```
+
+    - Squash Merge:
+
+    ```Bash
+    git merge --squash dune/agent-latest
+    git commit -m "feat: complete feature via dune agent"
+    git branch -d dune/agent-latest
+    ```
+
+    - Discard Work:
+
+    ```Bash
+    git branch -D dune/agent-latest
+    ```

@@ -45,6 +45,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   BRANCH_NAME="dune/agent-latest"
   CLONE_BASE_DIR="/tmp/.dune-clones"
   CLONE_DIR="${CLONE_BASE_DIR}/${PROJECT_NAME}-${TIMESTAMP}"
+  ACTIVE_SYMLINK="${CLONE_BASE_DIR}/${PROJECT_NAME}-active"
 
   if ! git -C "$GIT_ROOT" diff --quiet || ! git -C "$GIT_ROOT" diff --cached --quiet; then
     echo "==> Warning: Working tree has uncommitted edits. Only committed HEAD is cloned."
@@ -57,6 +58,9 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 
   git clone --depth 1 "file://$GIT_ROOT" "$CLONE_DIR" >/dev/null 2>&1
   git -C "$CLONE_DIR" remote remove origin >/dev/null 2>&1 || true
+
+  # Maintain a stable active symlink for live syncing from host
+  ln -sfn "$CLONE_DIR" "$ACTIVE_SYMLINK"
 
   RUN_DIR="$CLONE_DIR"
 
@@ -93,6 +97,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         echo "==> No new commits detected in sandbox."
       fi
 
+      rm -f "$ACTIVE_SYMLINK" 2>/dev/null || true
       rm -rf "$CLONE_DIR" 2>/dev/null || true
     fi
     return 0
@@ -127,6 +132,10 @@ elif ! docker image inspect "dune-python:${PYTHON_VERSION}" >/dev/null 2>&1; the
 fi
 
 echo "==> Spawning Dune sandbox for: $RUN_DIR"
+if [ "${IS_GIT:-false}" = true ]; then
+  echo "==> Live sync available from another terminal:"
+  echo "    git fetch $ACTIVE_SYMLINK HEAD:dune/agent-latest --force"
+fi
 
 # 6. Launch container, auto-install project dependencies, then start interactive zsh
 DOCKER_BUILDKIT=1 docker compose run --rm dev /bin/zsh -c '
