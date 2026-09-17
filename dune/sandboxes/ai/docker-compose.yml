@@ -21,10 +21,10 @@ services:
     environment:
       - HOME=/root
       - TERM=xterm-256color
-      # Prevent Git "dubious ownership" errors on the mounted clone
-      - GIT_CONFIG_GLOBAL=/root/.gitconfig
-      - GIT_CONFIG_SYSTEM=/dev/null
-      - GIT_SAFE_DIR=/workspace
+      # give read-only PAT to university gitlab
+      - GIT_CONFIG_COUNT=1
+      - "GIT_CONFIG_KEY_0=url.https://oauth2:${GITLAB_READ_TOKEN}@gitlab.tu-ilmenau.de/.insteadOf"
+      - "GIT_CONFIG_VALUE_0=https://gitlab.tu-ilmenau.de/"
     security_opt:
       - no-new-privileges:true
     cap_drop:

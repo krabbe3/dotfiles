@@ -15,11 +15,11 @@ usage() {
 Usage: dune <command> [options]
 
 Available commands:
-  ai       Launch isolated AI sandbox (shallow clone + dev container)
+  mentat       Launch isolated AI sandbox (shallow clone + dev container)
              Options:
                -p, --py, --python <version>   Specify Python version (default: 3.10)
                -r, --rebuild                  Force clean rebuild (--no-cache)
-  sync     Fetch in-flight commits from active sandbox to dune/agent-latest
+  spice     Fetch in-flight commits from active sandbox to dune/agent-latest (spice must flow continuously)
   help     Show this message
 EOF
   exit 0
@@ -33,11 +33,11 @@ COMMAND="$1"
 shift
 
 case "$COMMAND" in
-  ai)
-    exec "$DUNE_BIN_DIR/dune-ai" "$@"
+  mentat)
+    exec "$DUNE_BIN_DIR/dune-mentat" "$@"
     ;;
-  sync)
-    exec "$DUNE_BIN_DIR/dune-sync" "$@"
+  spice)
+    exec "$DUNE_BIN_DIR/dune-spice" "$@"
     ;;
   help|-h|--help)
     usage

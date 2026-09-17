@@ -83,6 +83,13 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "==> Cleaning up sandbox clone..."
 
     if [ -d "$CLONE_DIR" ]; then
+      # 1. Check for uncommitted work and preserve it automatically
+      if [ -n "$(git -C "$CLONE_DIR" status --porcelain 2>/dev/null)" ]; then
+        echo "==> Detected uncommitted changes in sandbox: auto-committing..."
+        git -C "$CLONE_DIR" add -A
+        git -C "$CLONE_DIR" commit -m "dune(auto): snapshot of uncommitted agent work on exit" >/dev/null 2>&1 || true
+      fi
+
       SANDBOX_HEAD="$(git -C "$CLONE_DIR" rev-parse HEAD 2>/dev/null || true)"
       HOST_HEAD="$(git -C "$GIT_ROOT" rev-parse HEAD 2>/dev/null || true)"
 
@@ -103,14 +110,14 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     return 0
   }
   trap cleanup EXIT INT TERM
-
 else
   IS_GIT=false
   RUN_DIR="$TARGET_DIR"
-  echo "==> Non-git directory: mounting directly."
 
   if [[ -f "$TARGET_DIR/.env" ]]; then
     export PROJECT_ENV_FILE="$TARGET_DIR/.env"
+  elif [[ -f "$SANDBOX_DIR/.env" ]]; then
+    export PROJECT_ENV_FILE="$SANDBOX_DIR/.env"
   else
     export PROJECT_ENV_FILE="/dev/null"
   fi
@@ -134,7 +141,7 @@ fi
 echo "==> Spawning Dune sandbox for: $RUN_DIR"
 if [ "${IS_GIT:-false}" = true ]; then
   echo "==> Live sync available from another terminal:"
-  echo "    git fetch $ACTIVE_SYMLINK HEAD:dune/agent-latest --force"
+  echo "    dune spice"
 fi
 
 # 6. Launch container, auto-install project dependencies, then start interactive zsh
