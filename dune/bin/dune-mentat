@@ -9,7 +9,7 @@ while [ -h "$SOURCE" ]; do
   [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
 done
 DUNE_DIR="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
-SANDBOX_DIR="$DUNE_DIR/sandboxes/ai"
+SANDBOX_DIR="$DUNE_DIR/sandboxes/mentat"
 
 TARGET_DIR="$(pwd)"
 PROJECT_NAME="$(basename "$TARGET_DIR")"

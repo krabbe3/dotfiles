@@ -16,7 +16,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     stow \
     ca-certificates \
     fzf \
+    npm \
     && rm -rf /var/lib/apt/lists/*
+
+# install pi coding agent
+RUN npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 
 # Set default shell to zsh
 RUN chsh -s /bin/zsh root

@@ -5,7 +5,7 @@ services:
     image: dune-python:${PYTHON_VERSION:-3.10}
     build:
       context: .
-      dockerfile: ${SANDBOX_DOCKERFILE:-Dockerfile.python}
+      dockerfile: ${SANDBOX_DOCKERFILE:-Dockerfile.mentat}
       args:
         PYTHON_VERSION: ${PYTHON_VERSION:-3.10}
     user: "0:0"
@@ -18,6 +18,11 @@ services:
       - ../../data/nvim/share:/root/.local/share/nvim:rw
       - ../../data/nvim/state:/root/.local/state/nvim:rw
       - ../../data/pip-cache:/root/.cache/pip:rw
+
+      # Pi agent configuration
+      - ./config/pi:/root/.config/pi:rw
+      # Pi state data
+      - ../../data/pi/agent:/root/.pi:rw
     environment:
       - HOME=/root
       - TERM=xterm-256color
