@@ -16,11 +16,14 @@ Usage: dune <command> [options]
 
 Available commands:
   mentat       Launch isolated AI sandbox (shallow clone + dev container)
-             Options:
-               -p, --py, --python <version>   Specify Python version (default: 3.10)
-               -r, --rebuild                  Force clean rebuild (--no-cache)
-  spice     Fetch in-flight commits from active sandbox to dune/agent-latest (spice must flow continuously)
-  help     Show this message
+               Options:
+                 -p, --py, --python <version>   Specify Python version (default: 3.10)
+                 -r, --rebuild                  Force clean rebuild (--no-cache)
+  spice        Fetch in-flight commits from active sandbox to dune/agent-latest (spice must flow continuously)
+  ghola        Resurrect workspace layout (editor/git/explorer) via tmuxinator
+               Usage:
+                 dune ghola [session_name] [conda_env]
+  help         Show this message
 EOF
   exit 0
 }
@@ -38,6 +41,9 @@ case "$COMMAND" in
     ;;
   spice)
     exec "$DUNE_BIN_DIR/dune-spice" "$@"
+    ;;
+  ghola)
+    exec "$DUNE_BIN_DIR/dune-ghola" "$@"
     ;;
   help|-h|--help)
     usage

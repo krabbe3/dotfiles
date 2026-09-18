@@ -41,8 +41,8 @@ Place the files in your dotfiles repository:
 dotfiles/dune/
 ├── bin/
 │   ├── dune                    # entry-level dispatcher for dune
-│   ├── dune-ai                 # CLI entrypoint and lifecycle manager
-    └── dune-sync               # Mid-flight sync helper
+│   ├── dune-mentat             # CLI entrypoint and lifecycle manager
+    └── dune-sietch             # Mid-flight sync helper
 ├── sandboxes/
 │   └── ai/
 │       ├── .env                # Global default sandbox environment variables

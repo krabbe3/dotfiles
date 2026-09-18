@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<EOF
+Usage: dune ghola <template> [session_name] [conda_env]
+       dune ghola -k | --kill [session_name]
+
+Options:
+  -k, --kill [name]   Kill the current project's tmux session (or specify name)
+  -h, --help          Show this message
+EOF
+  exit 0
+}
+
+PROJECT_ROOT="$(pwd -P)"
+DEFAULT_SESSION_NAME="$(basename "$PROJECT_ROOT")"
+
+# Require an explicit argument or show help
+if [[ $# -eq 0 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+  usage
+fi
+
+# Handle -k / --kill
+if [[ "$1" == "-k" ]] || [[ "$1" == "--kill" ]]; then
+  shift
+  SESSION_NAME="${1:-$DEFAULT_SESSION_NAME}"
+
+  if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    tmux kill-session -t "$SESSION_NAME"
+    echo "==> Killed tmux session: $SESSION_NAME"
+  else
+    echo "==> No active tmux session named: $SESSION_NAME"
+  fi
+  exit 0
+fi
+
+TEMPLATE="$1"
+shift
+
+SESSION_NAME="${1:-$DEFAULT_SESSION_NAME}"
+ACTIVE_CONDA_ENV="${CONDA_DEFAULT_ENV:-base}"
+TARGET_CONDA_ENV="${2:-$ACTIVE_CONDA_ENV}"
+
+# Attach if session already exists
+if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+  echo "==> Attaching to existing session: $SESSION_NAME"
+  exec tmux attach -t "$SESSION_NAME"
+fi
+
+echo "==> Spawning layout via tmuxinator [$TEMPLATE] for session: $SESSION_NAME"
+echo "==> Root dir:  $PROJECT_ROOT"
+echo "==> Conda env: $TARGET_CONDA_ENV"
+
+exec tmuxinator start "$TEMPLATE" "$SESSION_NAME" "$TARGET_CONDA_ENV" root="$PROJECT_ROOT"

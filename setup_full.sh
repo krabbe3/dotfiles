@@ -68,6 +68,20 @@ if [[ "$(hostname -s)" =~ ^makalu[0-9]+$ ]]; then
     else
         echo "==> GNU Stow already installed, skipping."
     fi
+
+    #install tmuxinator
+    # install tmuxinator
+    if ! command -v tmuxinator >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/tmuxinator" ]; then
+        if command -v gem >/dev/null 2>&1; then
+            echo "==> Installing tmuxinator to ~/.local/bin..."
+            mkdir -p "$HOME/.local/bin"
+            gem install --no-document --user-install -n "$HOME/.local/bin" tmuxinator
+        else
+            echo "==> Warning: gem not found on host. Skipping tmuxinator install."
+        fi
+    else
+        echo "==> tmuxinator already installed, skipping."
+    fi
 fi
 
 cd "$HOME/dotfiles"
