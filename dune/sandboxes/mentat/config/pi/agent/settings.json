@@ -2,5 +2,8 @@
   "defaultProvider": "gwdg",
   "defaultModel": "qwen3-coder-next",
   "lastChangelogVersion": "0.86.1",
-  "theme": "dark"
+  "theme": "dark",
+  "packages": [
+    "npm:pi-system-prompt"
+  ]
 }
