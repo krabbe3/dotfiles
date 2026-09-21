@@ -1,0 +1,51 @@
+{
+  "apertus-70b-instruct-2509": {
+    "name": "Apertus 70B Instruct 2509"
+  },
+  "devstral-2-123b-instruct-2512": {
+    "name": "Devstral 2 123B Instruct 2512"
+  },
+  "qwen3.8-27b": {
+    "name": "Qwen 3.8 27B"
+  },
+  "deepseek-v4-flash-0731": {
+    "name": "DeepSeek V4 Flash 0731"
+  },
+  "glm-5.3-flash": {
+    "name": "GLM 5.3 Flash",
+    "visual": true,
+    "video": true
+  },
+  "qwen3-coder-next": {
+    "name": "Qwen 3 Coder Next"
+  },
+  "qwen3-omni-30b-a3b-instruct": {
+    "name": "Qwen 3 Omni 30B A3B Instruct",
+    "visual": true
+  },
+  "mistral-medium-3.5-128b": {
+    "name": "Mistral Medium 3.5 128B"
+  },
+  "qwen3.5-397b-a17b": {
+    "name": "Qwen 3.5 397B A17B",
+    "visual": true,
+    "reasoning": true
+  },
+  "gemma-4-31b-it": {
+    "name": "Gemma 4 31B Instruct",
+    "visual": true
+  },
+  "qwen3.6-35b-a3b": {
+    "name": "Qwen 3.6 35B A3B",
+    "visual": true
+  },
+  "meta-llama-3.1-8b-instruct": {
+    "name": "Meta Llama 3.1 8B Instruct"
+  },
+  "openai-gpt-oss-120b": {
+    "name": "OpenAI GPT OSS 120B"
+  },
+  "qwen3-30b-a3b-instruct-2507": {
+    "name": "Qwen 3 30B A3B Instruct 2507"
+  }
+}

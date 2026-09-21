@@ -20,9 +20,8 @@ services:
       - ../../data/pip-cache:/root/.cache/pip:rw
 
       # Pi agent configuration
-      - ./config/pi:/root/.config/pi:rw
-      # Pi state data
-      - ../../data/pi/agent:/root/.pi:rw
+      - ./config/pi:/root/.pi:rw
+
     environment:
       - HOME=/root
       - TERM=xterm-256color

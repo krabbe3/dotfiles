@@ -17,7 +17,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fzf \
     npm \
+    ripgrep \
     && rm -rf /var/lib/apt/lists/*
+
+# install node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs
 
 # install pi coding agent
 RUN npm install -g --ignore-scripts @earendil-works/pi-coding-agent

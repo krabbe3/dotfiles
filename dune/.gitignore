@@ -2,3 +2,5 @@ data/
 .env
 .env.*
 !.env.example
+sandboxes/mentat/config/pi/agent/bin
+sandboxes/mentat/config/pi/agent/sessions

@@ -1,0 +1,74 @@
+{
+  "providers": {
+    "local": {
+      "baseUrl": "http://localhost:11434/v1",
+      "api": "openai-completions",
+      "apiKey": "dummy",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false
+      },
+      "models": [
+        {
+          "id": "qwen3-vl:8b-instruct",
+          "name": "qwen3-vl",
+          "reasoning": false,
+          "input": ["text", "image"]
+        }
+      ]
+    },
+    "gwdg": {
+      "baseUrl": "https://chat-ai.academiccloud.de/v1",
+      "api": "openai-completions",
+      "apiKey": "$KISSKI_API_KEY",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false
+      },
+      "models": [
+        {
+          "id": "glm-5.3-flash",
+          "name": "GLM5.3",
+          "reasoning": false,
+          "input": ["text", "image"]
+        },
+        {
+          "id": "qwen3-coder-next",
+          "name": "Qwen 3 Coder Next",
+          "reasoning": false,
+          "input": ["text"]
+        },
+        {
+          "id": "qwen3-omni-30b-a3b-instruct",
+          "name": "Qwen 3 Omni",
+          "reasoning": false,
+          "input": ["text", "image"]
+        },
+        {
+          "id": "qwen3.5-397b-a17b",
+          "name": "Qwen 3 Omni",
+          "reasoning": true,
+          "input": ["text", "image"]
+        },
+        {
+          "id": "devstral-2-123b-instruct-2512",
+          "name": "Devstral",
+          "reasoning": false,
+          "input": ["text"]
+        },
+        {
+          "id": "deepseek-v4-flash-0731",
+          "name": "Deepseek4",
+          "reasoning": false,
+          "input": ["text"]
+        },
+        {
+          "id": "gemma-4-31b-it",
+          "name": "Gemma4",
+          "reasoning": false,
+          "input": ["text"]
+        }
+      ]
+    }
+  }
+}
