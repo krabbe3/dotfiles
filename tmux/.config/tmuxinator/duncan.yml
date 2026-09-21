@@ -14,7 +14,9 @@ windows:
   - editor:
       layout: f8dc,301x68,0,0{113x68,0,0,1,115x68,114,0,4,71x68,230,0,5}
       panes:
-        - dune mentat
+        - commands:
+          - dune mentat
+          - pi
         - nvim
         - ""
 
