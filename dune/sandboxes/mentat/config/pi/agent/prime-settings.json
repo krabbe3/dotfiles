@@ -1,0 +1,56 @@
+{
+  "pi-graphify": {
+    "semanticBackend": "openai",
+    "autoContext": {
+      "enabled": true,
+      "augmentSearchResults": true,
+      "includeReport": true,
+      "includeWiki": true,
+      "reportMaxChars": 6000,
+      "queryBudget": 1200,
+      "sessionSummary": true,
+      "intentSuggestions": true,
+      "maxSessionAugments": 8,
+      "maxAugmentChars": 1200,
+      "minToolResultLines": 8,
+      "triggerTools": [
+        "grep",
+        "ffgrep",
+        "find",
+        "fffind",
+        "read"
+      ],
+      "triggerPatterns": [
+        "architecture",
+        "layer",
+        "component",
+        "module",
+        "subsystem",
+        "pipeline",
+        "community",
+        "cluster",
+        "relate",
+        "connect",
+        "depends",
+        "touches",
+        "nearby",
+        "impact",
+        "cross-file",
+        "system",
+        "tool",
+        "command",
+        "skill",
+        "keybinding",
+        "settings",
+        "prime-settings",
+        "resources_discover",
+        "graph",
+        "graphify",
+        "knowledge graph",
+        "GRAPH_REPORT",
+        "graphify-out"
+      ],
+      "autoQuery": false
+    }
+  }
+}

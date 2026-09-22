@@ -7,7 +7,9 @@
     "npm:pi-system-prompt",
     "npm:@josephyoung/pi-exit",
     "npm:pi-web-access",
-    "npm:@plannotator/pi-extension",
-    "npm:@gaodes/pi-graphify"
-  ]
+    "npm:@plannotator/pi-extension"
+  ],
+  "pi-graphify": {
+    "semanticBackend": "openai"
+  }
 }
