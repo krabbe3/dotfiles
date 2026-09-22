@@ -2,8 +2,6 @@
 
 Personal development environment configuration. Managed via [GNU Stow](https://www.gnu.org/software/stow/) for symlink-based deployment.
 
-**Asterianus**.
-
 ## Table of Contents
 
 - [Quick Install](#quick-install)
