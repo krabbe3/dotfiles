@@ -6,6 +6,7 @@
   "packages": [
     "npm:pi-system-prompt",
     "npm:@josephyoung/pi-exit",
-    "npm:pi-web-access"
+    "npm:pi-web-access",
+    "npm:@plannotator/pi-extension"
   ]
 }

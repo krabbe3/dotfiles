@@ -41,6 +41,7 @@ echo "==> Runtime: Python $PYTHON_VERSION"
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   IS_GIT=true
   GIT_ROOT="$(git rev-parse --show-toplevel)"
+  PROJECT_NAME="$(basename "$GIT_ROOT")"
   TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
   BRANCH_NAME="dune/agent-latest"
   CLONE_BASE_DIR="/tmp/.dune-clones"
@@ -75,6 +76,12 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     cp "$SANDBOX_DIR/.env" "$CLONE_DIR/.env"
   else
     export PROJECT_ENV_FILE="/dev/null"
+  fi
+
+  # Export Plannotator settings from sandbox .env for Docker Compose port mapping
+  if [[ -f "$SANDBOX_DIR/.env" ]]; then
+    export PLANNOTATOR_PORT="$(grep -E '^PLANNOTATOR_PORT=' "$SANDBOX_DIR/.env" | cut -d '=' -f2- | tr -d '\r"' || true)"
+    export PLANNOTATOR_REMOTE="$(grep -E '^PLANNOTATOR_REMOTE=' "$SANDBOX_DIR/.env" | cut -d '=' -f2- | tr -d '\r"' || true)"
   fi
 
   # Trap cleanup on exit, interrupt, or error
