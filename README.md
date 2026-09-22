@@ -1,4 +1,4 @@
-# 🌵 Dotfiles — Lorenz Mohr
+# Dotfiles — Lorenz Mohr
 
 Personal development environment configuration. Managed via [GNU Stow](https://www.gnu.org/software/stow/) for symlink-based deployment.
 
