@@ -268,9 +268,17 @@ export default function (pi: ExtensionAPI) {
               theme.fg("accent", model)
             : theme.fg("accent", model);
 
+          // ── Plannotator phase status ──
+          const statuses = footerData.getExtensionStatuses?.();
+          const planStatus =
+            statuses instanceof Map ? statuses.get("plannotator") : undefined;
+          const planStr = planStatus ?? "";  // ANSI-colored string ("⏸ plan", "📋 3/7", etc.)
+
           // ── Optional goal/status indicator from extensions like pi-codex-goal ──
-          const statuses = getExtensionStatusValues(footerData.getExtensionStatuses?.());
-          const goalStatus = statuses.find((status) => /goal/i.test(status));
+          const goalStatus =
+            statuses instanceof Map
+              ? Array.from(statuses.values()).find((s) => /goal/i.test(s))
+              : undefined;
           const goalStr = goalStatus ? theme.fg("warning", goalStatus) : "";
 
           const lastSlash = cwd.lastIndexOf("/");
@@ -284,6 +292,7 @@ export default function (pi: ExtensionAPI) {
             pathStr,
             branchStr ? theme.fg(branchColor, branchStr) : "",
             modelStr + thinkLabel,
+            planStr,
             goalStr,
           ].filter(Boolean);
           const left = leftParts.join(theme.fg("dim", " • "));
