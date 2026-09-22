@@ -1,0 +1,10 @@
+# 1. Ignore everything inside the folder
+graphify-out/*
+# 2. Re-include only the specific files you want
+!graphify-out/GRAPH_REPORT.md
+!graphify-out/graph.json
+!graphify-out/graph.html
+!graphify-out/manifest.json
+# 3. For directories like wiki/, un-ignore the folder AND its contents
+!graphify-out/wiki/
+!graphify-out/wiki/**

@@ -10,3 +10,4 @@
 	insteadOf = https://gitlab.tu-ilmenau.de/
 [core]
 	hooksPath = /home/lomo3746/.config/git/hooks
+	excludesfile = /home/lomo3746/.config/git/ignore
