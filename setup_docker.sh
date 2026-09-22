@@ -23,7 +23,7 @@ PROGRAMS=(nvim zsh tmux)
 
 for program in "${PROGRAMS[@]}"; do
     if [ -d "$program" ]; then
-        stow -v --target="$HOME" "$program"
+        stow --ignore="README.*" -v --target="$HOME" "$program"
         echo "Configured $program"
     else
         echo "Warning: dotfile directory '$program' not found, skipping."
