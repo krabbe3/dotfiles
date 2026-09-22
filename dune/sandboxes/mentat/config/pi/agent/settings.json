@@ -1,9 +1,11 @@
 {
   "defaultProvider": "gwdg",
-  "defaultModel": "qwen3-coder-next",
-  "lastChangelogVersion": "0.86.1",
+  "defaultModel": "glm-5.3-flash",
+  "lastChangelogVersion": "0.87.0",
   "theme": "dark",
   "packages": [
-    "npm:pi-system-prompt"
+    "npm:pi-system-prompt",
+    "npm:@josephyoung/pi-exit",
+    "npm:pi-web-access"
   ]
 }

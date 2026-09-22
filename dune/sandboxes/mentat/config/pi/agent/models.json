@@ -1,5 +1,23 @@
 {
   "providers": {
+
+    "m69": {
+      "api": "openai-completions",
+      "baseUrl": "http://10.0.2.2:11432/v1",
+      "apiKey": "dummy",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false
+      },
+      "models": [
+        {
+          "id": "Qwen/Qwen3.6-27B-FP8",
+          "name": "Qwen3.6-27B",
+          "contextWindow": 131072
+        }
+      ]
+    },
+
     "local": {
       "baseUrl": "http://localhost:11434/v1",
       "api": "openai-completions",
@@ -17,6 +35,7 @@
         }
       ]
     },
+
     "gwdg": {
       "baseUrl": "https://chat-ai.academiccloud.de/v1",
       "api": "openai-completions",
@@ -27,46 +46,65 @@
       },
       "models": [
         {
-          "id": "glm-5.3-flash",
-          "name": "GLM5.3",
-          "reasoning": false,
-          "input": ["text", "image"]
-        },
-        {
           "id": "qwen3-coder-next",
-          "name": "Qwen 3 Coder Next",
+          "name": "Qwen3-Coder-Next",
           "reasoning": false,
-          "input": ["text"]
-        },
-        {
-          "id": "qwen3-omni-30b-a3b-instruct",
-          "name": "Qwen 3 Omni",
-          "reasoning": false,
-          "input": ["text", "image"]
-        },
-        {
-          "id": "qwen3.5-397b-a17b",
-          "name": "Qwen 3 Omni",
-          "reasoning": true,
-          "input": ["text", "image"]
+          "input": ["text"],
+          "contextWindow": 256000
         },
         {
           "id": "devstral-2-123b-instruct-2512",
           "name": "Devstral",
           "reasoning": false,
-          "input": ["text"]
+          "input": ["text"],
+          "contextWindow": 256000
+        },
+        {
+          "id": "glm-5.3-flash",
+          "name": "GLM5.3",
+          "reasoning": false,
+          "input": ["text", "image"],
+          "samplingParams": {
+              "temperature": 1.0,
+              "top_p": 0.95
+          },
+          "contextWindow": 1000000
+        },
+        {
+          "id": "qwen3-omni-30b-a3b-instruct",
+          "name": "Qwen3-Omni",
+          "reasoning": false,
+          "input": ["text", "image"],
+          "contextWindow": 256000
+        },
+        {
+          "id": "qwen3.5-397b-a17b",
+          "name": "Qwen3.5-397b",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "samplingParams": {
+              "temperature": 0.6,
+              "top_p": 0.95
+          },
+          "contextWindow": 256000
         },
         {
           "id": "deepseek-v4-flash-0731",
           "name": "Deepseek4",
           "reasoning": false,
-          "input": ["text"]
+          "input": ["text"],
+          "samplingParams": {
+              "temperature": 1.0,
+              "top_p": 1.0
+          },
+          "contextWindow": 1000000
         },
         {
           "id": "gemma-4-31b-it",
           "name": "Gemma4",
           "reasoning": false,
-          "input": ["text"]
+          "input": ["text"],
+          "contextWindow": 256000
         }
       ]
     }

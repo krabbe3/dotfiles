@@ -2,5 +2,6 @@ data/
 .env
 .env.*
 !.env.example
+web-search-cache
 sandboxes/mentat/config/pi/agent/bin
 sandboxes/mentat/config/pi/agent/sessions
