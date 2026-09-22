@@ -46,8 +46,10 @@ RUN git config --global url."https://github.com/".insteadOf "git@github.com:" \
     && chmod +x /root/dotfiles/setup_docker.sh \
     && /bin/bash /root/dotfiles/setup_docker.sh
 
-# Base Python development tooling
+# Base installations for mentat
 RUN pip install --no-cache-dir black pip-tools ipython
+RUN pip install --no-cache-dir graphifyy
+RUN graphify pi install
 
 WORKDIR /workspace
 CMD ["/bin/zsh"]

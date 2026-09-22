@@ -126,7 +126,7 @@ fi
 
 for program in "${PROGRAMS[@]}"; do
     if [ -d "$program" ]; then
-        stow -v --target="$HOME" "$program"
+        stow --ignore="README.*" -v --target="$HOME" "$program"
         echo "Configuring $program"
     fi
 done
