@@ -145,7 +145,7 @@ if [ "${IS_GIT:-false}" = true ]; then
 fi
 
 # 6. Launch container, auto-install project dependencies, then start interactive zsh
-DOCKER_BUILDKIT=1 docker compose run --rm dev /bin/zsh -c '
+DOCKER_BUILDKIT=1 docker compose run --service-ports --rm dev /bin/zsh -c '
   if [ -f "pyproject.toml" ]; then
     echo "==> Found pyproject.toml: resolving dependencies..."
     pip install --cache-dir /root/.cache/pip -e .
