@@ -8,3 +8,5 @@
 	rebase = true
 [url "git@gitlab.tu-ilmenau.de:"]
 	insteadOf = https://gitlab.tu-ilmenau.de/
+[core]
+	hooksPath = /home/lomo3746/.config/git/hooks

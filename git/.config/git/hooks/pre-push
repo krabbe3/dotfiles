@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Git passes lines via stdin: <local ref> <local oid> <remote ref> <remote oid>
+while read -r local_ref _local_oid remote_ref _remote_oid; do
+  if [[ "$local_ref" =~ (refs/heads/|refs/remotes/[^/]+/)?dune/agent-latest$ || "$remote_ref" =~ refs/heads/dune/agent-latest$ ]]; then
+    echo "==========================================================" >&2
+    echo " [BLOCKED] Pushing 'dune/latest' is forbidden." >&2
+    echo " Attempted: $local_ref -> $remote_ref" >&2
+    echo "==========================================================" >&2
+    exit 1
+  fi
+done
+
+exit 0
