@@ -48,8 +48,8 @@ RUN git config --global url."https://github.com/".insteadOf "git@github.com:" \
 
 # Base installations for mentat
 RUN pip install --no-cache-dir black pip-tools ipython
-#RUN pip install --no-cache-dir graphifyy
-#RUN graphify pi install
+RUN pip install --no-cache-dir graphifyy
+RUN graphify pi install
 
 WORKDIR /workspace
 CMD ["/bin/zsh"]
