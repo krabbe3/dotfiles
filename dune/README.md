@@ -73,15 +73,26 @@ Result: `python`/`python3` in the container resolves to the host env's interpret
 
 ## Project Dependencies
 
-The sandbox only installs project dependencies if the project provides a dependency spec. On container start, in this order:
+The sandbox does **not** auto-install project dependencies. The Python available in the container is:
 
-1. `pyproject.toml` in the project root → `pip install -e .`
-2. otherwise `requirements.txt` → `pip install -r requirements.txt`
-3. otherwise nothing is installed and the base image Python is used as-is
+1. The active host Conda env, when launched with one — see [Conda Environment Passthrough](#conda-environment-passthrough). It already carries every third-party package you use on the host.
+2. Otherwise the base image's Python, which preinstalls `black`, `pip-tools`, `ipython`, and `graphify`. Install whatever you need manually inside the container.
 
-So: if you want your project's dependencies available in the container, the project must carry a `pyproject.toml` (package spec) or a `requirements.txt` (e.g. generated with `pip list --format=freeze > requirements.txt`). Without one, the sandbox silently runs dependency-free.
+### Making the project itself importable
 
-Note: when a host Conda env is mounted (see [Conda Environment Passthrough](#conda-environment-passthrough)), the container uses the env's interpreter and packages as-is, so the env typically already carries the project's dependencies. The mount is read-only, so `pip install` inside the container cannot modify the host env.
+If you develop the project on the host with `pip install -e .`, the editable install is only a pointer into the *host's* project path. That path does not exist in the container, and the read-only Conda mount means the env cannot be reinstalled there — so the project's own code is not importable as-is. Set `PYTHONPATH` to the project root (or its `src/` directory; the clone is mounted at `/workspace`):
+
+```bash
+export PYTHONPATH=/workspace          # or /workspace/src for src-layout projects
+```
+
+Add this to your shell rc or export it before the command that needs it.
+
+To add packages that are missing from the env without touching the host env (the mount is read-only), install into the container's user site:
+
+```bash
+pip install --user <package>          # session-local, gone when the container exits
+```
 
 ## Directory Layout
 
