@@ -30,7 +30,7 @@
         {
           "id": "qwen3-vl:8b-instruct",
           "name": "qwen3-vl",
-          "reasoning": false,
+          "reasoning": true,
           "input": ["text", "image"]
         }
       ]
