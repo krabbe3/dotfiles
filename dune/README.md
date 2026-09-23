@@ -59,6 +59,14 @@ Additionally, a `DUNE_DATA_MOUNTS` variable in either `.env` adds extra bind mou
 
 The compose file also exports a read-only GitLab PAT (`GITLAB_READ_TOKEN` in the sandbox `.env`) for university GitLab, and mounts the pi agent configuration from `sandboxes/mentat/config/pi/` to `/root/.pi` inside the container.
 
+### Conda Env Passthrough
+
+If you run `dune mentat` with an active conda environment on the host, the env directory (`$CONDA_PREFIX`) is bind-mounted into the container at the **same absolute path** (so baked-in shebangs and absolute paths keep working). When the project has no `pyproject.toml` or `requirements.txt`, the sandbox automatically switches to that env: its `bin/` is prepended to `PATH` and `CONDA_PREFIX`/`CONDA_DEFAULT_ENV` are set, instead of installing anything with pip. Requirements files always take precedence when present.
+
+Caveats:
+- The env is mounted `rw`, so `pip`/`conda` installs inside the sandbox modify your host env.
+- The host env's binaries must be compatible with the container's base distro (glibc) — conda-forge packages are fine; envs with packages built against a newer host glibc may fail to launch.
+
 ## Directory Layout
 
 ```Plaintext
