@@ -78,11 +78,6 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     export PROJECT_ENV_FILE="/dev/null"
   fi
 
-  # Export Plannotator settings from sandbox .env for Docker Compose port mapping
-  if [[ -f "$SANDBOX_DIR/.env" ]]; then
-    export PLANNOTATOR_PORT="$(grep -E '^PLANNOTATOR_PORT=' "$SANDBOX_DIR/.env" | cut -d '=' -f2- | tr -d '\r"' || true)"
-    export PLANNOTATOR_REMOTE="$(grep -E '^PLANNOTATOR_REMOTE=' "$SANDBOX_DIR/.env" | cut -d '=' -f2- | tr -d '\r"' || true)"
-  fi
 
   # Trap cleanup on exit, interrupt, or error
   cleanup() {
@@ -150,6 +145,13 @@ if [ "${IS_GIT:-false}" = true ]; then
   echo "==> Live sync available from another terminal:"
   echo "    dune spice"
 fi
+
+
+# Dynamic Port Selection for Plannotator
+FOUND_PORT=$(python3 -c 'import socket; print(next(p for p in range(19400, 19600) if socket.socket().connect_ex(("127.0.0.1", p)) != 0))' 2>/dev/null || echo "19400")
+export PLANNOTATOR_PORT="$FOUND_PORT"
+export PLANNOTATOR_REMOTE=1
+echo "==> Plannotator endpoint assigned to host port: $PLANNOTATOR_PORT"
 
 # 6. Launch container, auto-install project dependencies, then start interactive zsh
 DOCKER_BUILDKIT=1 docker compose run --service-ports --rm dev /bin/zsh -c '
