@@ -21,6 +21,7 @@ services:
       - ../../data/nvim/state:/root/.local/state/nvim:rw
       - ../../data/pip-cache:/root/.cache/pip:rw
 
+
       # Pi agent configuration
       - ./config/pi:/root/.pi:rw
 
