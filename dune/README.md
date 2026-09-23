@@ -31,6 +31,7 @@ Host Branch: dune/agent-latest (Ready for review/merge)
 - Single Review Reference: Upon sync or exit, commits are fetched to a single host branch pointer: `dune/agent-latest`.
 - Clean Host State: The ephemeral directory and active symlink in `/tmp/.dune-clones/` are automatically deleted via an exit trap. Your active host working tree remains completely untouched.
 - AI-Ready Base Image: The Docker image preinstalls the pi coding agent, Neovim (via your dotfiles), git, fzf, ripgrep, Node 22, and graphify.
+- Identical Python via Conda Passthrough: When a Conda env is active on the host, `dune mentat` mounts it at the same path (read-only) and prepends it to the container's `PATH`. The container then runs the exact same Python interpreter and packages as the host. Requires Conda on the host — without an active Conda env, the container falls back to the base image's Python.
 - Persistent Cache Mounts: Dedicated bind mounts for pip and Neovim state keep build artifacts across multiple invocations (`dune/data/`).
 - Plannotator Support: A free host port in 19400–19600 is auto-assigned per session and forwarded into the container (`PLANNOTATOR_REMOTE=1`).
 
@@ -38,7 +39,8 @@ Host Branch: dune/agent-latest (Ready for review/merge)
 
 ```Plaintext
 dune mentat [-p <python_version>] [-r]   Launch isolated AI sandbox (shallow clone + dev container)
-    -p, --py, --python <version>  Specify Python version (default: 3.10)
+    -p, --py, --python <version>  Specify Python version (default: auto-detected from the active
+                                  host Conda env, otherwise 3.10)
     -r, --rebuild                 Force clean image rebuild (--no-cache)
 
 dune spice                           Fetch in-flight commits from active sandbox to dune/agent-latest
@@ -59,6 +61,16 @@ Additionally, a `DUNE_DATA_MOUNTS` variable in either `.env` adds extra bind mou
 
 The compose file also exports a read-only GitLab PAT (`GITLAB_READ_TOKEN` in the sandbox `.env`) for university GitLab, and mounts the pi agent configuration from `sandboxes/mentat/config/pi/` to `/root/.pi` inside the container.
 
+### Conda Environment Passthrough
+
+If `dune mentat` is started with a host Conda env active (`CONDA_PREFIX` set), that env is passed through to the container:
+
+1. The env's Python version (major.minor) is used to select the base image `dune-python:<ver>`, unless overridden with `-p`.
+2. `$CONDA_PREFIX` is bind-mounted at the same path, read-only.
+3. `$CONDA_PREFIX/bin` is prepended to `PATH` at container start.
+
+Result: `python`/`python3` in the container resolves to the host env's interpreter, and all installed packages are identical to the host — the agent runs in exactly the same Python environment you use on the host. This behavior **requires Conda** (e.g., Miniconda/Miniforge) installed on the host with the env activated before launching `dune mentat`. If no Conda env is active, the container uses the base image's Python (default 3.10, or the `-p` version).
+
 ## Project Dependencies
 
 The sandbox only installs project dependencies if the project provides a dependency spec. On container start, in this order:
@@ -68,6 +80,8 @@ The sandbox only installs project dependencies if the project provides a depende
 3. otherwise nothing is installed and the base image Python is used as-is
 
 So: if you want your project's dependencies available in the container, the project must carry a `pyproject.toml` (package spec) or a `requirements.txt` (e.g. generated with `pip list --format=freeze > requirements.txt`). Without one, the sandbox silently runs dependency-free.
+
+Note: when a host Conda env is mounted (see [Conda Environment Passthrough](#conda-environment-passthrough)), the container uses the env's interpreter and packages as-is, so the env typically already carries the project's dependencies. The mount is read-only, so `pip install` inside the container cannot modify the host env.
 
 ## Directory Layout
 
