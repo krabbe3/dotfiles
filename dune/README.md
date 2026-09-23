@@ -59,6 +59,16 @@ Additionally, a `DUNE_DATA_MOUNTS` variable in either `.env` adds extra bind mou
 
 The compose file also exports a read-only GitLab PAT (`GITLAB_READ_TOKEN` in the sandbox `.env`) for university GitLab, and mounts the pi agent configuration from `sandboxes/mentat/config/pi/` to `/root/.pi` inside the container.
 
+## Project Dependencies
+
+The sandbox only installs project dependencies if the project provides a dependency spec. On container start, in this order:
+
+1. `pyproject.toml` in the project root → `pip install -e .`
+2. otherwise `requirements.txt` → `pip install -r requirements.txt`
+3. otherwise nothing is installed and the base image Python is used as-is
+
+So: if you want your project's dependencies available in the container, the project must carry a `pyproject.toml` (package spec) or a `requirements.txt` (e.g. generated with `pip list --format=freeze > requirements.txt`). Without one, the sandbox silently runs dependency-free.
+
 ## Directory Layout
 
 ```Plaintext
