@@ -1,7 +1,7 @@
 {
   "defaultProvider": "m69",
   "defaultModel": "Qwen/Qwen3.6-27B-FP8",
-  "lastChangelogVersion": "0.87.0",
+  "lastChangelogVersion": "0.87.1",
   "theme": "dark",
   "packages": [
     "npm:pi-system-prompt",
