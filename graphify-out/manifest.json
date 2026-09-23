@@ -1,0 +1,374 @@
+{
+  "dune/bin/dune": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.603983,
+    "ast_hash": "e6183a8ca46cabb950255be84d7a934e",
+    "semantic_hash": "e6183a8ca46cabb950255be84d7a934e"
+  },
+  "dune/bin/dune-ghola": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.6039855,
+    "ast_hash": "a0207e269c21498f5111ef0669407d5d",
+    "semantic_hash": "a0207e269c21498f5111ef0669407d5d"
+  },
+  "dune/bin/dune-mentat": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.6039872,
+    "ast_hash": "b42c404822f725bca3adcaf1a3b4fb8d",
+    "semantic_hash": "b42c404822f725bca3adcaf1a3b4fb8d"
+  },
+  "dune/bin/dune-spice": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.6039884,
+    "ast_hash": "06a9feb7db88652f4639d3857a207046",
+    "semantic_hash": "06a9feb7db88652f4639d3857a207046"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/auth.json": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.60399,
+    "ast_hash": "99914b932bd37a50b983c5e7c90ae93b",
+    "semantic_hash": "99914b932bd37a50b983c5e7c90ae93b"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/extensions/minimal-footer.ts": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.6039913,
+    "ast_hash": "87ff4dac10f85515bd354381abd07c53",
+    "semantic_hash": "87ff4dac10f85515bd354381abd07c53"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/models-store.json": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.603993,
+    "ast_hash": "07f64fab5db158fb653bc72125f4b5fd",
+    "semantic_hash": "07f64fab5db158fb653bc72125f4b5fd"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/models.json": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.603994,
+    "ast_hash": "be912b48a18d02a6166fcbd105fc6ceb",
+    "semantic_hash": "be912b48a18d02a6166fcbd105fc6ceb"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/prime-settings.json": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.6039953,
+    "ast_hash": "f1d86b940921a64e1ee6a1f80a527e12",
+    "semantic_hash": "f1d86b940921a64e1ee6a1f80a527e12"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/settings.json": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.6039965,
+    "ast_hash": "319242d646387d246dff52f5dc9361cc",
+    "semantic_hash": "319242d646387d246dff52f5dc9361cc"
+  },
+  "dune/sandboxes/mentat/config/pi/web-search.json": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.6039982,
+    "ast_hash": "a1d252f21365c19a78f4c4c75d654a95",
+    "semantic_hash": "a1d252f21365c19a78f4c4c75d654a95"
+  },
+  "dune/sandboxes/mentat/scripts/get_kisski_models.py": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.6039994,
+    "ast_hash": "41222d7aeab781f6ad1d2f493a72e46c",
+    "semantic_hash": "41222d7aeab781f6ad1d2f493a72e46c"
+  },
+  "dune/sandboxes/mentat/scripts/models.json": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.604001,
+    "ast_hash": "9c668c02787754c3ad88e54dcb0385be",
+    "semantic_hash": "9c668c02787754c3ad88e54dcb0385be"
+  },
+  "git/.config/git/hooks/pre-push": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.604002,
+    "ast_hash": "bdd5f56bc3b06e4e9c06190fa80e3189",
+    "semantic_hash": "bdd5f56bc3b06e4e9c06190fa80e3189"
+  },
+  "nvim/.config/nvim/init.lua": {
+    "mtime": 1790164642.1558573,
+    "seen": 1790166722.6040032,
+    "ast_hash": "2f6627169bb86ddc8e45c0b96fc7fadd",
+    "semantic_hash": "2f6627169bb86ddc8e45c0b96fc7fadd"
+  },
+  "nvim/.config/nvim/lua/config/lazy.lua": {
+    "mtime": 1790164642.1558573,
+    "seen": 1790166722.6040044,
+    "ast_hash": "4d11a5064cc32c8a9948dfeb34c8e8bc",
+    "semantic_hash": "4d11a5064cc32c8a9948dfeb34c8e8bc"
+  },
+  "nvim/.config/nvim/lua/plugins/blink_completion.lua": {
+    "mtime": 1790164642.1558573,
+    "seen": 1790166722.6040053,
+    "ast_hash": "5b152d4041c97e375784ff5e1a183830",
+    "semantic_hash": "5b152d4041c97e375784ff5e1a183830"
+  },
+  "nvim/.config/nvim/lua/plugins/dap.lua": {
+    "mtime": 1790164642.1558573,
+    "seen": 1790166722.6040068,
+    "ast_hash": "d09f1c50e8362b1a8ca4bd4a22366e93",
+    "semantic_hash": "d09f1c50e8362b1a8ca4bd4a22366e93"
+  },
+  "nvim/.config/nvim/lua/plugins/fugitive.lua": {
+    "mtime": 1790164642.1558573,
+    "seen": 1790166722.604008,
+    "ast_hash": "ebe09682f44940e89545bd5e5417f0df",
+    "semantic_hash": "ebe09682f44940e89545bd5e5417f0df"
+  },
+  "nvim/.config/nvim/lua/plugins/harpoon.lua": {
+    "mtime": 1790164642.1558573,
+    "seen": 1790166722.6040154,
+    "ast_hash": "10c2fb68577edc263643b5d0c707cddb",
+    "semantic_hash": "10c2fb68577edc263643b5d0c707cddb"
+  },
+  "nvim/.config/nvim/lua/plugins/lsp.lua": {
+    "mtime": 1790164642.1558573,
+    "seen": 1790166722.6040168,
+    "ast_hash": "01491df8012e349a7d11e198118e2040",
+    "semantic_hash": "01491df8012e349a7d11e198118e2040"
+  },
+  "nvim/.config/nvim/lua/plugins/lualine.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040182,
+    "ast_hash": "f1d959bc5977ae36db1e36be2a3620fc",
+    "semantic_hash": "f1d959bc5977ae36db1e36be2a3620fc"
+  },
+  "nvim/.config/nvim/lua/plugins/mason.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040206,
+    "ast_hash": "193f24b1d29144992b804dbe15d58339",
+    "semantic_hash": "193f24b1d29144992b804dbe15d58339"
+  },
+  "nvim/.config/nvim/lua/plugins/mini_icons.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040218,
+    "ast_hash": "e6596f4e1d7bab9b76de36397fd6b283",
+    "semantic_hash": "e6596f4e1d7bab9b76de36397fd6b283"
+  },
+  "nvim/.config/nvim/lua/plugins/nvim_tmux_navigation.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.604023,
+    "ast_hash": "201e19d030a37171be87a66e25b1f4b2",
+    "semantic_hash": "201e19d030a37171be87a66e25b1f4b2"
+  },
+  "nvim/.config/nvim/lua/plugins/obsidian.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040244,
+    "ast_hash": "11d964cf45b34994ef49cf6add8a2a03",
+    "semantic_hash": "11d964cf45b34994ef49cf6add8a2a03"
+  },
+  "nvim/.config/nvim/lua/plugins/oil.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040254,
+    "ast_hash": "8ce652b6dc7fb0a377accfff825dd9f4",
+    "semantic_hash": "8ce652b6dc7fb0a377accfff825dd9f4"
+  },
+  "nvim/.config/nvim/lua/plugins/rose_pine.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040266,
+    "ast_hash": "ab275a8e6748894ea9d2d7cf546e3a91",
+    "semantic_hash": "ab275a8e6748894ea9d2d7cf546e3a91"
+  },
+  "nvim/.config/nvim/lua/plugins/snacks.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.604028,
+    "ast_hash": "7ddaeb9f37dc97b7bbfdfc88c0e01b3d",
+    "semantic_hash": "7ddaeb9f37dc97b7bbfdfc88c0e01b3d"
+  },
+  "nvim/.config/nvim/lua/plugins/telescope.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.604029,
+    "ast_hash": "8364cfc3768291763a93c6fe15085cdc",
+    "semantic_hash": "8364cfc3768291763a93c6fe15085cdc"
+  },
+  "nvim/.config/nvim/lua/plugins/treesitter.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040301,
+    "ast_hash": "1f91b4eb3e12655ddd825a099fe19c73",
+    "semantic_hash": "1f91b4eb3e12655ddd825a099fe19c73"
+  },
+  "nvim/.config/nvim/lua/plugins/undotree.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040316,
+    "ast_hash": "be060ad51cb77a2fe8460d65e413d688",
+    "semantic_hash": "be060ad51cb77a2fe8460d65e413d688"
+  },
+  "nvim/.config/nvim/lua/user/autocommands.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040328,
+    "ast_hash": "40616d09e00e2e567ca50a0d40d5ab6c",
+    "semantic_hash": "40616d09e00e2e567ca50a0d40d5ab6c"
+  },
+  "nvim/.config/nvim/lua/user/keymaps.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040337,
+    "ast_hash": "0f3253cde5ae271d9694ba02839e0cbf",
+    "semantic_hash": "0f3253cde5ae271d9694ba02839e0cbf"
+  },
+  "nvim/.config/nvim/lua/user/options.lua": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040351,
+    "ast_hash": "52edf9ba8acf026bd1a1b2b5a51a0c8a",
+    "semantic_hash": "52edf9ba8acf026bd1a1b2b5a51a0c8a"
+  },
+  "scripts/macos/run_latex-ocr.sh": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.604036,
+    "ast_hash": "fab0c7990e17eeab9e18e7a72c7ab016",
+    "semantic_hash": "fab0c7990e17eeab9e18e7a72c7ab016"
+  },
+  "setup_docker.sh": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.6040373,
+    "ast_hash": "4bd67f1443ae378daefe37d5fa38f69e",
+    "semantic_hash": "4bd67f1443ae378daefe37d5fa38f69e"
+  },
+  "setup_full.sh": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.604039,
+    "ast_hash": "a46d4a0b378173316d66a3f8a256ff93",
+    "semantic_hash": "a46d4a0b378173316d66a3f8a256ff93"
+  },
+  "transcriber/supernote_pipeline.py": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.6040401,
+    "ast_hash": "4b2443afd94be4ae252172b7bb5a2aba",
+    "semantic_hash": "4b2443afd94be4ae252172b7bb5a2aba"
+  },
+  "README.md": {
+    "mtime": 1790164642.1528575,
+    "seen": 1790166722.604041,
+    "ast_hash": "40aeb1984721b61df184ed07d929511e",
+    "semantic_hash": "40aeb1984721b61df184ed07d929511e"
+  },
+  "backups/README.md": {
+    "mtime": 1790164642.1528575,
+    "seen": 1790166722.604042,
+    "ast_hash": "ee79437d045801134e798ed06c56ff4c",
+    "semantic_hash": "ee79437d045801134e798ed06c56ff4c"
+  },
+  "dune/README.md": {
+    "mtime": 1790164642.1528575,
+    "seen": 1790166722.604043,
+    "ast_hash": "7cd71b9898d48a5ff36c474c84d390e5",
+    "semantic_hash": "7cd71b9898d48a5ff36c474c84d390e5"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/AGENTS.md": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.6040442,
+    "ast_hash": "ba80dfcb86f3e88135a1997d173c3550",
+    "semantic_hash": "ba80dfcb86f3e88135a1997d173c3550"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/APPEND_SYSTEM.md": {
+    "mtime": 1790164642.1538575,
+    "seen": 1790166722.604046,
+    "ast_hash": "802b357d3e997ce87b8a92eceab2b99c",
+    "semantic_hash": "802b357d3e997ce87b8a92eceab2b99c"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/skills/graphify/SKILL.md": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.604047,
+    "ast_hash": "1656a8a8e4a05bbe69f32cd15de81e87",
+    "semantic_hash": "1656a8a8e4a05bbe69f32cd15de81e87"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/skills/graphify/references/exports.md": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.6040485,
+    "ast_hash": "9da2a2152e60a22f07f05fed5158f287",
+    "semantic_hash": "9da2a2152e60a22f07f05fed5158f287"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/skills/graphify/references/hooks.md": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.6040497,
+    "ast_hash": "3f545db6ce646650bb9de588f5512a27",
+    "semantic_hash": "3f545db6ce646650bb9de588f5512a27"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/skills/graphify/references/query.md": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.6040509,
+    "ast_hash": "3c46f8ad006874260614ed8657d02307",
+    "semantic_hash": "3c46f8ad006874260614ed8657d02307"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/skills/graphify/references/transcribe.md": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.604052,
+    "ast_hash": "67b6a5fa6c0974e18f60db9f8932fbd8",
+    "semantic_hash": "67b6a5fa6c0974e18f60db9f8932fbd8"
+  },
+  "dune/sandboxes/mentat/config/pi/agent/skills/graphify/references/update.md": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.6040533,
+    "ast_hash": "9378bd03d56baaf78bd738ab3848f142",
+    "semantic_hash": "9378bd03d56baaf78bd738ab3848f142"
+  },
+  "dune/sandboxes/mentat/docker-compose.yml": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.6040542,
+    "ast_hash": "88b433e94bec69fde15ff44b8740f7bb",
+    "semantic_hash": "88b433e94bec69fde15ff44b8740f7bb"
+  },
+  "git/README.md": {
+    "mtime": 1790164642.1548574,
+    "seen": 1790166722.6040554,
+    "ast_hash": "20723d4be991560a4b774364008073e7",
+    "semantic_hash": "20723d4be991560a4b774364008073e7"
+  },
+  "kitty/README.md": {
+    "mtime": 1790164642.1558573,
+    "seen": 1790166722.6040564,
+    "ast_hash": "f2ad316c972b3969b5a174606abd0f8a",
+    "semantic_hash": "f2ad316c972b3969b5a174606abd0f8a"
+  },
+  "lazygit/README.md": {
+    "mtime": 1790164642.1558573,
+    "seen": 1790166722.6040573,
+    "ast_hash": "7a5210f259b2f76193595cb3c091f422",
+    "semantic_hash": "7a5210f259b2f76193595cb3c091f422"
+  },
+  "nvim/README.md": {
+    "mtime": 1790164642.1568575,
+    "seen": 1790166722.6040583,
+    "ast_hash": "918a0d61045b2c67c67f051c78f6444a",
+    "semantic_hash": "918a0d61045b2c67c67f051c78f6444a"
+  },
+  "scripts/README.md": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.6040635,
+    "ast_hash": "7d7cff5535e4bce25669c5cdbe2df0fb",
+    "semantic_hash": "7d7cff5535e4bce25669c5cdbe2df0fb"
+  },
+  "ssh/README.md": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.6040645,
+    "ast_hash": "e5d4004184a481138761c4765a1f6c94",
+    "semantic_hash": "e5d4004184a481138761c4765a1f6c94"
+  },
+  "tmux/README.md": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.6040654,
+    "ast_hash": "c81178f2c123b83f2acad5f793ec3153",
+    "semantic_hash": "c81178f2c123b83f2acad5f793ec3153"
+  },
+  "transcriber/README.md": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.6040666,
+    "ast_hash": "74ab28041c63fd5d0e3124951cf412c2",
+    "semantic_hash": "74ab28041c63fd5d0e3124951cf412c2"
+  },
+  "transcriber/environment.yml": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.6040678,
+    "ast_hash": "77e44dc1585460c5f1f78126da61ea91",
+    "semantic_hash": "77e44dc1585460c5f1f78126da61ea91"
+  },
+  "transcriber/prompt.md": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.6040688,
+    "ast_hash": "182ecfde913370d4cbcda36627964709",
+    "semantic_hash": "182ecfde913370d4cbcda36627964709"
+  },
+  "zsh/README.md": {
+    "mtime": 1790164642.1638572,
+    "seen": 1790166722.60407,
+    "ast_hash": "4e989a2d9addd7760f99ef4a02d7efe5",
+    "semantic_hash": "4e989a2d9addd7760f99ef4a02d7efe5"
+  }
+}
