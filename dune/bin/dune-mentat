@@ -125,6 +125,34 @@ else
   fi
 fi
 
+
+# 5. Dynamic Data Mounts via DUNE_DATA_MOUNTS (Option 2)
+EXTRA_VOLUMES=()
+PROJECT_DATA_MOUNTS=""
+
+if [[ -f "$TARGET_DIR/.env" ]]; then
+  PROJECT_DATA_MOUNTS="$(grep -E '^DUNE_DATA_MOUNTS=' "$TARGET_DIR/.env" | cut -d '=' -f2- | tr -d '\r"' || true)"
+fi
+
+if [[ -z "$PROJECT_DATA_MOUNTS" && -f "$SANDBOX_DIR/.env" ]]; then
+  PROJECT_DATA_MOUNTS="$(grep -E '^DUNE_DATA_MOUNTS=' "$SANDBOX_DIR/.env" | cut -d '=' -f2- | tr -d '\r"' || true)"
+fi
+
+if [[ -n "$PROJECT_DATA_MOUNTS" ]]; then
+  IFS=',' read -ra MOUNT_ENTRIES <<< "$PROJECT_DATA_MOUNTS"
+  for entry in "${MOUNT_ENTRIES[@]}"; do
+    entry="$(echo "$entry" | xargs)"
+    if [[ -n "$entry" ]]; then
+      # Falls kein Doppelpunkt enthalten ist, identischen Pfad mappen (:ro als Default)
+      if [[ "$entry" != *:* ]]; then
+        entry="$entry:$entry:ro"
+      fi
+      echo "==> Mounting external data volume (same-path): $entry"
+      EXTRA_VOLUMES+=(-v "$entry")
+    fi
+  done
+fi
+
 export TARGET_PROJECT="$RUN_DIR"
 export SANDBOX_NAME="${PROJECT_NAME}-agent"
 
@@ -154,7 +182,7 @@ export PLANNOTATOR_REMOTE=1
 echo "==> Plannotator endpoint assigned to host port: $PLANNOTATOR_PORT"
 
 # 6. Launch container, auto-install project dependencies, then start interactive zsh
-DOCKER_BUILDKIT=1 docker compose run --service-ports --rm dev /bin/zsh -c '
+DOCKER_BUILDKIT=1 docker compose run "${EXTRA_VOLUMES[@]}" --service-ports --rm dev /bin/zsh -c '
   if [ -f "pyproject.toml" ]; then
     echo "==> Found pyproject.toml: resolving dependencies..."
     pip install --cache-dir /root/.cache/pip -e .
