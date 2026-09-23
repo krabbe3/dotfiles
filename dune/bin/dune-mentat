@@ -153,18 +153,6 @@ if [[ -n "$PROJECT_DATA_MOUNTS" ]]; then
   done
 fi
 
-# 5b. Push active conda env into the container (fallback when the project has no requirements file)
-DUNE_CONDA_ENV_DIR=""
-DUNE_CONDA_ENV_NAME=""
-if [[ -n "${CONDA_PREFIX:-}" && -d "${CONDA_PREFIX}" ]]; then
-  DUNE_CONDA_ENV_DIR="$CONDA_PREFIX"
-  DUNE_CONDA_ENV_NAME="${CONDA_DEFAULT_ENV:-$(basename "$CONDA_PREFIX")}"
-  export DUNE_CONDA_ENV_DIR DUNE_CONDA_ENV_NAME
-  # Mounted at the same path inside the container so shebangs/absolute paths keep working
-  EXTRA_VOLUMES+=(-v "$DUNE_CONDA_ENV_DIR:$DUNE_CONDA_ENV_DIR:rw")
-  echo "==> Detected active conda env '${DUNE_CONDA_ENV_NAME}' at $DUNE_CONDA_ENV_DIR: mounting into sandbox"
-fi
-
 # Dynamic Port Selection for Plannotator
 FOUND_PORT=$(python3 -c 'import socket; print(next(p for p in range(19400, 19600) if socket.socket().connect_ex(("127.0.0.1", p)) != 0))' 2>/dev/null || echo "19400")
 export PLANNOTATOR_PORT="$FOUND_PORT"
@@ -199,13 +187,6 @@ DOCKER_BUILDKIT=1 docker compose run "${EXTRA_VOLUMES[@]}" --service-ports --rm 
   elif [ -f "requirements.txt" ]; then
     echo "==> Found requirements.txt: resolving dependencies..."
     pip install --cache-dir /root/.cache/pip -r requirements.txt
-  elif [ -n "${DUNE_CONDA_ENV_DIR:-}" ] && [ -d "${DUNE_CONDA_ENV_DIR}" ]; then
-    echo "==> No requirements file found: using conda env '${DUNE_CONDA_ENV_NAME:-unknown}' from host"
-    export CONDA_DEFAULT_ENV="${DUNE_CONDA_ENV_NAME:-}"
-    export CONDA_PREFIX="$DUNE_CONDA_ENV_DIR"
-    export PATH="$DUNE_CONDA_ENV_DIR/bin:$PATH"
-  else
-    echo "==> No requirements file found: using base image Python"
   fi
 
   exec /bin/zsh

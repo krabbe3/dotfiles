@@ -34,9 +34,6 @@ services:
       # plannotator port
       - PLANNOTATOR_PORT=${PLANNOTATOR_PORT}
       - PLANNOTATOR_REMOTE=${PLANNOTATOR_REMOTE}
-      # conda env pushed from host (empty when no active conda env)
-      - DUNE_CONDA_ENV_DIR=${DUNE_CONDA_ENV_DIR:-}
-      - DUNE_CONDA_ENV_NAME=${DUNE_CONDA_ENV_NAME:-}
     security_opt:
       - no-new-privileges:true
     cap_drop:
