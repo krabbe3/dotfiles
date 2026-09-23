@@ -1,6 +1,6 @@
 # Dune AI Sandbox
 
-An ephemeral, isolated development environment designed for autonomous coding agents and interactive experimentation. It leverages local shallow Git clones and rootless Docker to allow agents to execute arbitrary code, manage dependencies, and create rollback checkpoints without exposing your host commit history or risking your host working tree.
+An ephemeral, isolated development environment designed for autonomous coding agents and interactive experimentation. It leverages local shallow Git clones and local Docker to let agents execute arbitrary code, manage dependencies, and create rollback checkpoints without exposing your host commit history or risking your host working tree.
 
 ## Architecture Overview
 
@@ -14,7 +14,7 @@ Host Repository (HEAD)
 Container Workspace (/workspace)
        │  - Agent runs commands, installs packages, makes commits
        │
-       ├─► Mid-flight: `dune sync` pulls active commits (to dune/agent-latest) to host anytime
+       ├─► Mid-flight: `dune spice` pulls active commits (to dune/agent-latest) to host anytime
        │
        ▼ (User exits container: exit / Ctrl+D)
 Host Git Object Store
@@ -25,170 +25,65 @@ Host Branch: dune/agent-latest (Ready for review/merge)
 
 ## Key Features
 
-- Complete History Isolation: Clones strictly at HEAD with --depth 1 and purges the origin remote. The agent cannot inspect past repository history or push to remotes.
-- Continuous Checkpoints: The agent can commit freely to Git. Commits remain isolated within the container until synced or reviewed.
-- Mid-Flight Syncing: A stable symlink (/tmp/.dune-clones/<project>-active) allows pulling commits into host Git branches while the container remains running.
-- Single Review Reference: Upon sync or exit, commits are fetched to a single host branch pointer: dune/agent-latest.
-- Clean Host State: The ephemeral directory and active symlink in /tmp/.dune-clones/ are automatically deleted via exit trap. Your active host working tree remains completely untouched.
-- Environment Passthrough: Merges default container variables with any existing project .env file automatically.
-- Persistent Cache Mounts: Dedicated bind mounts for pip and Neovim state cache build artifacts across multiple invocations.
+- Complete History Isolation: Clones strictly at HEAD with `--depth 1` and removes the origin remote. The agent cannot inspect past repository history or push to remotes.
+- Continuous Checkpoints: The agent can commit freely to Git. Commits remain isolated within the container until synced or reviewed. On exit, uncommitted work is auto-committed as a snapshot before syncing.
+- Mid-Flight Syncing: A stable symlink (`/tmp/.dune-clones/<project>-active`) allows `dune spice` to pull commits into the host branch while the container is still running.
+- Single Review Reference: Upon sync or exit, commits are fetched to a single host branch pointer: `dune/agent-latest`.
+- Clean Host State: The ephemeral directory and active symlink in `/tmp/.dune-clones/` are automatically deleted via an exit trap. Your active host working tree remains completely untouched.
+- AI-Ready Base Image: The Docker image preinstalls the pi coding agent, Neovim (via your dotfiles), git, fzf, ripgrep, Node 22, and graphify.
+- Persistent Cache Mounts: Dedicated bind mounts for pip and Neovim state keep build artifacts across multiple invocations (`dune/data/`).
+- Plannotator Support: A free host port in 19400–19600 is auto-assigned per session and forwarded into the container (`PLANNOTATOR_REMOTE=1`).
+
+## Commands
+
+```Plaintext
+dune mentat [-p <python_version>] [-r]   Launch isolated AI sandbox (shallow clone + dev container)
+    -p, --py, --python <version>  Specify Python version (default: 3.10)
+    -r, --rebuild                 Force clean image rebuild (--no-cache)
+
+dune spice                           Fetch in-flight commits from active sandbox to dune/agent-latest
+
+dune ghola <template> [session_name] [conda_env]
+                                     Resurrect workspace layout (editor/git/explorer) via tmuxinator
+dune ghola -k [session_name]         Kill the tmux session for this project
+```
+
+## Environment Passthrough
+
+Container environment is assembled in layers (later files override earlier ones):
+
+1. `sandboxes/mentat/.env` — global sandbox defaults (copy from `.env.example`, e.g. `KISSKI_API_KEY`)
+2. Project `.env` — injected from the repo root if present
+
+Additionally, a `DUNE_DATA_MOUNTS` variable in either `.env` adds extra bind mounts at runtime, comma-separated. Entries without a `:mode` suffix default to `:ro`, and entries with a single path are mapped to the same path inside the container.
+
+The compose file also exports a read-only GitLab PAT (`GITLAB_READ_TOKEN` in the sandbox `.env`) for university GitLab, and mounts the pi agent configuration from `sandboxes/mentat/config/pi/` to `/root/.pi` inside the container.
 
 ## Directory Layout
-
-Place the files in your dotfiles repository:
 
 ```Plaintext
 dotfiles/dune/
 ├── bin/
-│   ├── dune                    # entry-level dispatcher for dune
-│   ├── dune-mentat             # CLI entrypoint and lifecycle manager
-    └── dune-sietch             # Mid-flight sync helper
+│   ├── dune                  # entry-level dispatcher
+│   ├── dune-mentat           # sandbox CLI entrypoint and lifecycle manager
+│   ├── dune-spice            # mid-flight sync helper
+│   └── dune-ghola            # tmuxinator layout helper
 ├── sandboxes/
-│   └── ai/
-│       ├── .env                # Global default sandbox environment variables
-│       ├── docker-compose.yml  # Container run configuration
-│       └── Dockerfile.python   # Runtime image definition
-└── data/                       # Host-cached runtime state (gitignored)
+│   └── mentat/
+│       ├── .env              # Global default sandbox environment (gitignored, copy .env.example)
+│       ├── .env.example      # Template with KISSKI_API_KEY
+│       ├── Dockerfile.mentat # Runtime image definition (pi agent, dotfiles, graphify)
+│       ├── docker-compose.yml# Container run configuration
+│       └── config/pi/        # Pi agent configuration mounted into the container
+└── data/                     # Host-cached runtime state (gitignored)
     ├── pip-cache/
     └── nvim/
+        ├── share/
+        └── state/
 ```
 
 ## Installation & Setup
 
-Add the executable script to your shell's search path.
-
-In ~/.zshrc or ~/.bashrc:
-```Bash
-export PATH="$HOME/dotfiles/dune/bin:$PATH"
-```
-
-Make the script executable:
-```Bash
-chmod +x "$HOME/dotfiles/dune/bin/dune-ai"
-```
-
-## Configuration Files
-
-`dotfiles/dune/sandboxes/ai/docker-compose.yml`
-```YAML
-services:
-  dev:
-    build:
-      context: .
-      dockerfile: Dockerfile.python
-      args:
-        PYTHON_VERSION: ${PYTHON_VERSION:-3.10}
-    image: dune-python:${PYTHON_VERSION:-3.10}
-    container_name: ${SANDBOX_NAME}
-    working_dir: /workspace
-    stdin_open: true
-    tty: true
-    env_file:
-      - .env
-      - ${PROJECT_ENV_FILE:-/dev/null}
-    volumes:
-      - ${TARGET_PROJECT}:/workspace
-      - ../../data/pip-cache:/root/.cache/pip
-      - ../../data/nvim/share:/root/.local/share/nvim
-      - ../../data/nvim/state:/root/.local/state/nvim
-```
-
-`dotfiles/dune/sandboxes/ai/Dockerfile.python`
-```Dockerfile
-ARG PYTHON_VERSION=3.10
-FROM python:${PYTHON_VERSION}-slim
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    zsh \
-    curl \
-    ripgrep \
-    fd-find \
-    build-essential \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Git defaults for agent-generated commits
-RUN git config --system --add safe.directory /workspace \
-    && git config --system --add safe.directory /root/dotfiles \
-    && git config --system user.name "Dune Agent" \
-    && git config --system user.email "agent@dune.local"
-
-ENV SHELL=/bin/zsh
-WORKDIR /workspace
-
-CMD ["/bin/zsh"]
-```
-
-`dotfiles/dune/sandboxes/ai/.env`
-```Bash
-YOUR_API_KEYS=
-```
-
-## CLI Usage
-
-Run dune ai from the root of any target repository or folder:
-
-```Bash
-# Start an interactive container with Python 3.10 (default)
-dune ai
-# Specify a custom Python version
-dune ai --py 3.12
-# Force a clean rebuild of the base Docker image
-dune ai --rebuild
-```
-
-## Review & Integration Workflow
-
-1. Work Inside the Container
-
-Commit early and often as rollback checkpoints inside the sandbox:
-
-```Bash
-git add .
-git commit -m "feat: parse schema structure"
-```
-
-2. Live Sync While Container is Running (Optional)
-
-From a separate terminal or tmux pane on your host:
-
-```Bash
-dune sync
-git diff HEAD..dune/agent-latest
-git merge dune/agent-latest
-```
-The container continues running without interruption.
-
-3. Exit & Final Ingestion
-
-When finished inside the container:
-
-```Bash
-exit
-```
-
-The exit trap automatically ingests any remaining commits into branch `dune/agent-latest` and removes `/tmp` artifacts.
-
-4. Merge or Discard on Host
-
-    - Standard Merge:
-
-    ```Bash
-    git merge dune/agent-latest
-    git branch -d dune/agent-latest
-    ```
-
-    - Squash Merge:
-
-    ```Bash
-    git merge --squash dune/agent-latest
-    git commit -m "feat: complete feature via dune agent"
-    git branch -d dune/agent-latest
-    ```
-
-    - Discard Work:
-
-    ```Bash
-    git branch -D dune/agent-latest
-    ```
+1. Copy `dune/sandboxes/mentat/.env.example` to `dune/sandboxes/mentat/.env` and fill in your API keys.
+2. Add `dune/bin` to your shell's `PATH`.
+3. `dune mentat` will build the Docker image on first use for the selected Python version; pass `-r` to force a clean rebuild.

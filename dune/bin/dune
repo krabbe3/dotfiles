@@ -22,7 +22,8 @@ Available commands:
   spice        Fetch in-flight commits from active sandbox to dune/agent-latest (spice must flow continuously)
   ghola        Resurrect workspace layout (editor/git/explorer) via tmuxinator
                Usage:
-                 dune ghola [session_name] [conda_env]
+                 dune ghola <template> [session_name] [conda_env]
+                 dune ghola -k [session_name]
   help         Show this message
 EOF
   exit 0
