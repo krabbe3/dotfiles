@@ -46,7 +46,7 @@ export NUMEXPR_NUM_THREADS=1
 
 # kitty +kitten ssh alias
 # and automatic port forwarding for matplotlib webagg!
-alias kssh="kitty +kitten ssh -L 8988:localhost:8988"
+alias kssh="kitty +kitten ssh -YL 8988:localhost:8988"
 
 # zsh plugin settings
 # autosuggestions
