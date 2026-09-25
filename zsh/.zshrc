@@ -49,7 +49,10 @@ export NUMEXPR_NUM_THREADS=1
 alias kssh="kitty +kitten ssh -YL 8988:localhost:8988"
 
 # x11 forwarding xquartz display variable
-export DISPLAY=:0
+# Nur setzen, wenn noch kein DISPLAY von SSH/X11 übergeben wurde
+if [ -z "$DISPLAY" ]; then
+    export DISPLAY=:0
+fi
 
 # zsh plugin settings
 # autosuggestions
