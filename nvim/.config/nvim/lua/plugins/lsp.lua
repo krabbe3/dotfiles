@@ -90,6 +90,10 @@ return {
             vim.api.nvim_create_autocmd('LspAttach', {
                 callback = function(args)
                     local client = vim.lsp.get_client_by_id(args.data.client_id)
+
+                    -- diagnostics movement
+                    vim.keymap.set('n', '<leader>sj', vim.diagnostic.goto_next)
+                    vim.keymap.set('n', '<leader>sk', vim.diagnostic.goto_prev)
                     -- check for nil
                     if not client then return end
 
