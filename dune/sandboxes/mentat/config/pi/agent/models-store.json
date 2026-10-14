@@ -1433,7 +1433,8 @@
           "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true,
-          "supportsExplicitPromptCacheMode": true
+          "supportsExplicitPromptCacheMode": true,
+          "supportsMidConvoEffort": true
         },
         "inputLimits": {
           "maxRequestBytes": 536870912,
@@ -1492,7 +1493,8 @@
           "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true,
-          "supportsExplicitPromptCacheMode": true
+          "supportsExplicitPromptCacheMode": true,
+          "supportsMidConvoEffort": true
         },
         "inputLimits": {
           "maxRequestBytes": 536870912,
@@ -1551,7 +1553,8 @@
           "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true,
-          "supportsExplicitPromptCacheMode": true
+          "supportsExplicitPromptCacheMode": true,
+          "supportsMidConvoEffort": true
         },
         "inputLimits": {
           "maxRequestBytes": 536870912,
@@ -1610,7 +1613,8 @@
           "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true,
-          "supportsExplicitPromptCacheMode": true
+          "supportsExplicitPromptCacheMode": true,
+          "supportsMidConvoEffort": true
         },
         "inputLimits": {
           "maxRequestBytes": 536870912,
@@ -1641,7 +1645,16 @@
           "input": 4,
           "output": 20,
           "cacheRead": 0.4,
-          "cacheWrite": 5
+          "cacheWrite": 5,
+          "tiers": [
+            {
+              "inputTokensAbove": 272000,
+              "input": 8,
+              "output": 30,
+              "cacheRead": 0.8,
+              "cacheWrite": 10
+            }
+          ]
         },
         "contextWindow": 1050000,
         "maxTokens": 128000,
@@ -2021,8 +2034,8 @@
         "type": "chat"
       }
     ],
-    "checkedAt": 1791294199358,
-    "lastModified": 1791290549000,
-    "etag": "W/\"088045d5b9f69b280395672dcd5ada79\""
+    "checkedAt": 1791984989446,
+    "lastModified": 1791981624000,
+    "etag": "W/\"b0dc71970824c1732139c09709a6ffc4\""
   }
 }
