@@ -220,10 +220,10 @@ else
 fi
 
 if [ $FAILED -eq 1 ]; then
-    echo "\n==> Setup validation failed!"
+    echo "==> Setup validation failed!"
     exit 1
 else
-    echo "\n==> All checks passed! Setup complete."
+    echo "==> All checks passed! Setup complete."
 fi
 
 ###### SSH CONFIG CHMOD ######
