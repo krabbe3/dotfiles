@@ -34,7 +34,33 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     
     # Install required packages via Homebrew
     echo "==> Installing packages via Homebrew..."
-    brew install neovim stow lazygit tmux tmuxinator
+    brew install stow lazygit tmux tmuxinator
+
+    # Install specific neovim version from release binary
+    NVIM_ARCH=$(uname -m)
+    if [ "$NVIM_ARCH" = "arm64" ]; then
+        NVIM_BIN="nvim-macos-arm64.tar.gz"
+    else
+        NVIM_BIN="nvim-macos-x64.tar.gz"
+    fi
+
+    INSTALLED_NVIM=""
+    if command -v nvim >/dev/null 2>&1; then
+        INSTALLED_NVIM="$(nvim --version | head -n 1 | awk '{print $2}')"
+    fi
+
+    if [ "$INSTALLED_NVIM" != "$NVIM_TARGET" ]; then
+        echo "==> Neovim '$INSTALLED_NVIM' detected (required: $NVIM_TARGET). Installing..."
+        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/neovim/neovim/releases/download/${NVIM_TARGET}/${NVIM_BIN}" -o "$HOME/.local/opt/nvim.tar.gz"
+        rm -rf "$HOME/.local/opt/nvim"
+        mkdir -p "$HOME/.local/opt/nvim"
+        tar xzf "$HOME/.local/opt/nvim.tar.gz" -C "$HOME/.local/opt/nvim" --strip-components=1
+        rm -f "$HOME/.local/opt/nvim.tar.gz"
+        ln -sf "$HOME/.local/opt/nvim/bin/nvim" "$HOME/.local/bin/nvim"
+        echo "==> Neovim $NVIM_TARGET installed to ~/.local/bin/nvim."
+    else
+        echo "==> Neovim $NVIM_TARGET already present, skipping."
+    fi
 
     # Install tree-sitter CLI from release binary
     TS_ARCH=$(uname -m)
@@ -54,10 +80,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     else
         echo "==> tree-sitter CLI already installed."
     fi
-    
-    # Pin neovim version to prevent updates
-    brew pin neovim
-    echo "==> Pinned neovim version: $(neovim --version | head -n 1 | awk '{print $2}')"
 
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "==> Linux detected. Using manual downloads..."
