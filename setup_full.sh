@@ -34,30 +34,11 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     
     # Install required packages via Homebrew
     echo "==> Installing packages via Homebrew..."
-    brew install neovim stow lazygit tmux tmuxinator
+    brew install neovim stow lazygit tmux tmuxinator node tree-sitter
 
     # Pin neovim version to prevent updates
     brew pin neovim
     echo "==> Pinned neovim version: $(neovim --version | head -n 1 | awk '{print $2}')"
-
-    # Install tree-sitter CLI from release binary
-    TS_ARCH=$(uname -m)
-    if [ "$TS_ARCH" = "arm64" ]; then
-        TS_BIN="tree-sitter-macos-arm64.gz"
-    elif [ "$TS_ARCH" = "x86_64" ]; then
-        TS_BIN="tree-sitter-macos-x64.gz"
-    fi
-
-    if ! command -v tree-sitter >/dev/null 2>&1; then
-        echo "==> Installing tree-sitter CLI..."
-        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/tree-sitter/tree-sitter/releases/download/${TREE_SITTER_TARGET}/${TS_BIN}" -o "$HOME/.local/opt/tree-sitter.gz"
-        gzip -d "$HOME/.local/opt/tree-sitter.gz"
-        chmod +x "$HOME/.local/opt/tree-sitter"
-        ln -sf "$HOME/.local/opt/tree-sitter" "$HOME/.local/bin/tree-sitter"
-        echo "==> tree-sitter CLI installed."
-    else
-        echo "==> tree-sitter CLI already installed."
-    fi
 
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "==> Linux detected. Using manual downloads..."
