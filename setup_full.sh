@@ -6,13 +6,41 @@ find . -name ".DS_Store" -exec rm -f {} +
 
 ###### VERSION REQUIREMENTS ######
 NVIM_TARGET="v0.11.5"
+LAZYGIT_TARGET="v0.53.0"
 
 ###### DIRECTORIES & PATH ######
 mkdir -p "$HOME/.local/bin" "$HOME/.local/opt"
 export PATH="$HOME/.local/bin:$PATH"
 
-###### INSTALL PACKAGES (LINUX / MAKALU) ######
-if [[ "$(hostname -s)" =~ ^makalu[0-9]+$ ]]; then
+###### PLATFORM DETECTION & INSTALL PACKAGES ######
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "==> macOS detected. Using Homebrew..."
+    
+    # Install Homebrew if not present
+    if ! command -v brew >/dev/null 2>&1; then
+        echo "==> Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL --retry 3 --retry-delay 2 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        
+        # Add Homebrew to PATH (Apple Silicon)
+        if [ -d "$HOME/.linuxbrew/bin" ]; then
+            export PATH="$HOME/.linuxbrew/bin:$PATH"
+        elif [ -d "$HOME/.homebrew/bin" ]; then
+            export PATH="$HOME/.homebrew/bin:$PATH"
+        elif [ -d "/opt/homebrew/bin" ]; then
+            export PATH="/opt/homebrew/bin:$PATH"
+        fi
+    fi
+    
+    # Install required packages via Homebrew
+    echo "==> Installing packages via Homebrew..."
+    brew install neovim stow lazygit tmux tmuxinator
+    
+    # Pin neovim version to prevent updates
+    brew pin neovim
+    echo "==> Pinned neovim version: $(neovim --version | head -n 1 | awk '{print $2}')"
+
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "==> Linux detected. Using manual downloads..."
     # install nvim (v0.11.5 required; needs older glibc compat from neovim-releases)
     INSTALLED_NVIM="$HOME/.local/bin/nvim"
     CURRENT_NVIM=""
@@ -24,7 +52,7 @@ if [[ "$(hostname -s)" =~ ^makalu[0-9]+$ ]]; then
 
     if [ "$CURRENT_NVIM" != "$NVIM_TARGET" ]; then
         echo "==> Neovim '$CURRENT_NVIM' detected (required: $NVIM_TARGET). Installing to ~/.local..."
-        curl -fsSL "https://github.com/neovim/neovim-releases/releases/download/${NVIM_TARGET}/nvim-linux-x86_64.tar.gz" -o "$HOME/.local/opt/nvim.tar.gz"
+        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/neovim/neovim-releases/releases/download/${NVIM_TARGET}/nvim-linux-x86_64.tar.gz" -o "$HOME/.local/opt/nvim.tar.gz"
         
         rm -rf "$HOME/.local/opt/nvim"
         mkdir -p "$HOME/.local/opt/nvim"
@@ -40,7 +68,7 @@ if [[ "$(hostname -s)" =~ ^makalu[0-9]+$ ]]; then
     # install lazygit
     if ! command -v lazygit >/dev/null 2>&1 && [ ! -x "$HOME/.local/opt/lazygit/lazygit" ]; then
         echo "==> Installing lazygit..."
-        curl -fsSL https://github.com/jesseduffield/lazygit/releases/download/v0.53.0/lazygit_0.53.0_Linux_x86_64.tar.gz -o "$HOME/.local/opt/lazygit.tar.gz"
+        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_TARGET}/lazygit_${LAZYGIT_TARGET#v}_Linux_x86_64.tar.gz" -o "$HOME/.local/opt/lazygit.tar.gz"
         mkdir -p "$HOME/.local/opt/lazygit"
         tar xzf "$HOME/.local/opt/lazygit.tar.gz" -C "$HOME/.local/opt/lazygit"
         rm -f "$HOME/.local/opt/lazygit.tar.gz"
@@ -52,7 +80,7 @@ if [[ "$(hostname -s)" =~ ^makalu[0-9]+$ ]]; then
     # install stow
     if ! command -v stow >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/stow" ]; then
         echo "==> Compiling and installing GNU Stow..."
-        curl -fsSL https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz -o "$HOME/.local/opt/stow.tar.gz"
+        curl -fsSL --retry 3 --retry-delay 2 https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz -o "$HOME/.local/opt/stow.tar.gz"
         mkdir -p "$HOME/.local/opt/stow"
         tar xzf "$HOME/.local/opt/stow.tar.gz" -C "$HOME/.local/opt/stow"
         rm -f "$HOME/.local/opt/stow.tar.gz"
@@ -131,6 +159,40 @@ for program in "${PROGRAMS[@]}"; do
     fi
 done
 echo "Finished softlinking files!"
+
+###### VALIDATION ######
+echo ""
+echo "==> Validating setup..."
+FAILED=0
+for tool in nvim stow lazygit; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        echo "  ✓ $tool found at $(command -v $tool)"
+    else
+        echo "  ✗ $tool not found!"
+        FAILED=1
+    fi
+done
+
+if [ -f "$HOME/.zshrc" ] && [ -L "$HOME/.zshrc" ]; then
+    echo "  ✓ zshrc symlinked"
+else
+    echo "  ✗ zshrc not symlinked!"
+    FAILED=1
+fi
+
+if [ -f "$HOME/.tmux.conf" ] && [ -L "$HOME/.tmux.conf" ]; then
+    echo "  ✓ tmux.conf symlinked"
+else
+    echo "  ✗ tmux.conf not symlinked!"
+    FAILED=1
+fi
+
+if [ $FAILED -eq 1 ]; then
+    echo "\n==> Setup validation failed!"
+    exit 1
+else
+    echo "\n==> All checks passed! Setup complete."
+fi
 
 ###### SSH CONFIG CHMOD ######
 if [ -f "$HOME/.ssh/config" ]; then

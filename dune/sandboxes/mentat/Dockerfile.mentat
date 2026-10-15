@@ -43,8 +43,7 @@ WORKDIR $HOME/dotfiles
 
 RUN git config --global url."https://github.com/".insteadOf "git@github.com:" \
     && git clone --recurse-submodules https://github.com/krabbe3/dotfiles.git /root/dotfiles \
-    && chmod +x /root/dotfiles/setup_docker.sh \
-    && /bin/bash /root/dotfiles/setup_docker.sh
+    && make -C /root/dotfiles docker
 
 # Base installations for mentat
 RUN pip install --no-cache-dir black pip-tools ipython
