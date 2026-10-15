@@ -37,6 +37,10 @@ source $ZSH/oh-my-zsh.sh
 
 # export .local/bin for user packages
 export PATH="$HOME/.local/bin:$PATH"
+# Rust / Cargo binaries (includes tree-sitter-cli)
+[[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+
+
 # Select nvim as editor
 export EDITOR='nvim'
 
