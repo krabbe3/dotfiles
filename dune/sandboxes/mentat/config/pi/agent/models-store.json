@@ -2032,10 +2032,38 @@
           }
         },
         "type": "chat"
+      },
+      {
+        "type": "classifier",
+        "id": "gpt-6-luna",
+        "name": "GPT-6 Luna",
+        "api": "openai-decisions",
+        "provider": "openai",
+        "baseUrl": "https://api.openai.com/v1",
+        "input": [
+          "text",
+          "image"
+        ],
+        "cost": {
+          "input": 0.1,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "tiers": [
+            {
+              "inputTokensAbove": 272000,
+              "input": 0.2,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            }
+          ]
+        },
+        "contextWindow": 922000
       }
     ],
-    "checkedAt": 1792052453086,
-    "lastModified": 1791981624000,
-    "etag": "W/\"b0dc71970824c1732139c09709a6ffc4\""
+    "lastModified": 1792068059000,
+    "etag": "W/\"66ade7f4bebf0ce0a7650e47031e58dd\"",
+    "checkedAt": 1792071020876
   }
 }
