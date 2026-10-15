@@ -8,14 +8,16 @@ docker:
 
 validate:
 	@echo "==> Validating dotfile symlinks..."
-	@for program in nvim zsh ssh git kitty tmux lazygit; do \
-		if [ -d "$$program" ]; then \
-			if ls -la ~ | grep -q "\->.*dotfiles/$$program"; then \
-				echo "  ✓ $$program symlinked"; \
-			else \
-				echo "  ⚠ $$program not symlinked"; \
-			fi \
-		fi \
+	@for check in "~/.zshrc:zsh" "~/.tmux.conf:tmux" "~/.gitconfig:git" "~/.ssh/config:ssh" "~/.config/nvim:nvim" "~/.config/kitty:kitty" "~/.config/lazygit:lazygit"; do \
+		target=$$(echo $$check | cut -d: -f1); \
+		name=$$(echo $$check | cut -d: -f2); \
+		if [ -L "$$target" ]; then \
+			echo "  ✓ $$name ($$target)"; \
+		elif [ -e "$$target" ]; then \
+			echo "  ⚠ $$name ($$target exists but not symlinked)"; \
+		else \
+			echo "  ✗ $$name ($$target missing)"; \
+		fi; \
 	done
 
 test:
