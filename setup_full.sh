@@ -131,13 +131,17 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "==> tmuxinator already installed, skipping."
     fi
 
-    # install tree-sitter CLI
+    # install tree-sitter CLI (via cargo due to glibc compatibility)
     if ! command -v tree-sitter >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/tree-sitter" ]; then
-        echo "==> Installing tree-sitter CLI..."
-        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/tree-sitter/tree-sitter/releases/download/${TREE_SITTER_TARGET}/tree-sitter-linux-x64.gz" -o "$HOME/.local/opt/tree-sitter.gz"
-        gzip -d "$HOME/.local/opt/tree-sitter.gz"
-        chmod +x "$HOME/.local/opt/tree-sitter"
-        ln -sf "$HOME/.local/opt/tree-sitter" "$HOME/.local/bin/tree-sitter"
+        echo "==> Installing tree-sitter CLI via cargo..."
+        # Ensure Rust toolchain is available
+        if ! command -v cargo >/dev/null 2>&1; then
+            echo "==> Installing Rust toolchain..."
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source "$HOME/.cargo/env"
+        fi
+        # Build and install specific version
+        cargo install --locked "tree-sitter-cli@${TREE_SITTER_TARGET#v}"
         echo "==> tree-sitter CLI installed."
     else
         echo "==> tree-sitter CLI already installed, skipping."
