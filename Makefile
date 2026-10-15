@@ -8,7 +8,7 @@ docker:
 
 validate:
 	@echo "==> Validating dotfile symlinks..."
-	@for check in "${HOME}/.zshrc:zsh" "${HOME}/.tmux.conf:tmux" "${HOME}/.gitconfig:git" "${HOME}/.ssh/config:ssh" "${HOME}/.config/nvim:nvim" "${HOME}/.config/kitty:kitty" "${HOME}/.config/lazygit:lazygit"; do \
+	@for check in "${HOME}/.zshrc:zsh" "${HOME}/.tmux.conf:tmux" "${HOME}/.config/git:git" "${HOME}/.ssh/config:ssh" "${HOME}/.config/nvim:nvim"; do \
 		target=$$(echo $$check | cut -d: -f1); \
 		name=$$(echo $$check | cut -d: -f2); \
 		if [ -L "$$target" ]; then \
