@@ -34,7 +34,26 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     
     # Install required packages via Homebrew
     echo "==> Installing packages via Homebrew..."
-    brew install neovim stow lazygit tmux tmuxinator tree-sitter
+    brew install neovim stow lazygit tmux tmuxinator
+
+    # Install tree-sitter CLI from release binary
+    TS_ARCH=$(uname -m)
+    if [ "$TS_ARCH" = "arm64" ]; then
+        TS_BIN="tree-sitter-macos-arm64.gz"
+    elif [ "$TS_ARCH" = "x86_64" ]; then
+        TS_BIN="tree-sitter-macos-x64.gz"
+    fi
+
+    if ! command -v tree-sitter >/dev/null 2>&1; then
+        echo "==> Installing tree-sitter CLI..."
+        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/tree-sitter/tree-sitter/releases/download/${TREE_SITTER_TARGET}/${TS_BIN}" -o "$HOME/.local/opt/tree-sitter.gz"
+        gzip -d "$HOME/.local/opt/tree-sitter.gz"
+        chmod +x "$HOME/.local/opt/tree-sitter"
+        ln -sf "$HOME/.local/opt/tree-sitter" "$HOME/.local/bin/tree-sitter"
+        echo "==> tree-sitter CLI installed."
+    else
+        echo "==> tree-sitter CLI already installed."
+    fi
     
     # Pin neovim version to prevent updates
     brew pin neovim
@@ -115,15 +134,11 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # install tree-sitter CLI
     if ! command -v tree-sitter >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/tree-sitter" ]; then
         echo "==> Installing tree-sitter CLI..."
-        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/tree-sitter/tree-sitter/releases/download/${TREE_SITTER_TARGET}/tree-sitter.tar.gz" -o "$HOME/.local/opt/tree-sitter.tar.gz"
-        mkdir -p "$HOME/.local/opt/tree-sitter"
-        tar xzf "$HOME/.local/opt/tree-sitter.tar.gz" -C "$HOME/.local/opt/tree-sitter" --strip-components=1
-        rm -f "$HOME/.local/opt/tree-sitter.tar.gz"
-
-        pushd "$HOME/.local/opt/tree-sitter" >/dev/null
-        make
-        make install PREFIX="$HOME/.local"
-        popd >/dev/null
+        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/tree-sitter/tree-sitter/releases/download/${TREE_SITTER_TARGET}/tree-sitter-linux-x64.gz" -o "$HOME/.local/opt/tree-sitter.gz"
+        gzip -d "$HOME/.local/opt/tree-sitter.gz"
+        chmod +x "$HOME/.local/opt/tree-sitter"
+        ln -sf "$HOME/.local/opt/tree-sitter" "$HOME/.local/bin/tree-sitter"
+        echo "==> tree-sitter CLI installed."
     else
         echo "==> tree-sitter CLI already installed, skipping."
     fi
