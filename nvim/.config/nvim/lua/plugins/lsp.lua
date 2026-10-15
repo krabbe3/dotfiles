@@ -22,12 +22,12 @@ return {
             --
             -- lua_ls with capabilities
             local capabilities = require('blink.cmp').get_lsp_capabilities()
-            require("lspconfig").lua_ls.setup({
+            vim.lsp.config('lua_ls', {
                 capabilities = capabilities,
             })
 
             -- pylsp with capabilities
-            require("lspconfig").pylsp.setup({
+            vim.lsp.config('pylsp', {
                 capabilities = capabilities,
                 settings = {
                     pylsp = {
@@ -75,14 +75,18 @@ return {
             })
 
             -- -- basedpyright for even better type hints
-            -- require("lspconfig").basedpyright.setup({
+            -- vim.lsp.config('basedpyright', {
             --     capabilities = capabilities
             -- })
 
             -- -- ruff lsp for python (lightning fast)
-            -- require("lspconfig").ruff.setup({
+            -- vim.lsp.config('ruff', {
             --     capabilities = capabilities,
             -- })
+
+            -- Enable servers
+            vim.lsp.enable('lua_ls')
+            vim.lsp.enable('pylsp')
 
             -- KEYMAPS for LSPs
             -- LSP namespace is <leader>s(erver)
