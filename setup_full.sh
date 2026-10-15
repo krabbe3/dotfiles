@@ -59,6 +59,24 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "==> tree-sitter CLI already installed."
     fi
 
+    # install Node.js via nvm
+    if ! command -v nvm >/dev/null 2>&1; then
+        echo "==> Installing nvm..."
+        curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+    fi
+
+    if ! command -v node >/dev/null 2>&1; then
+        echo "==> Installing Node.js (LTS)..."
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+        nvm install --lts
+        nvm alias default lts/*
+    else
+        echo "==> Node.js already installed."
+    fi
+
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "==> Linux detected. Using manual downloads..."
     # install nvim (v0.11.5 required; needs older glibc compat from neovim-releases)
