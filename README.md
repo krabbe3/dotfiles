@@ -5,6 +5,7 @@ Personal development environment configuration. Managed via [GNU Stow](https://w
 ## Table of Contents
 
 - [Quick Install](#quick-install)
+- [Make Targets](#make-targets)
 - [Docker Install](#docker-install)
 - [Directory Layout](#directory-layout)
 - [Tools & Configs](#tools--configs)
@@ -22,16 +23,24 @@ Personal development environment configuration. Managed via [GNU Stow](https://w
 git clone --recurse-submodules git@<your-repo>.git ~/dotfiles
 cd ~/dotfiles
 
-# Full setup (Linux / TU Ilmenau Makalu cluster)
+# Full setup (Linux or macOS)
 ./setup_full.sh
+```
+
+Or using Make:
+
+```bash
+make install
 ```
 
 This will:
 
-- Install Neovim `v0.11.5` to `~/.local/bin` (pinned)
-- Install lazygit, GNU Stow, tmuxinator (if missing)
+- Auto-detect platform (Linux or macOS)
+- On Linux: Install Neovim `v0.11.5`, lazygit, GNU Stow, tmuxinator to `~/.local/bin`
+- On macOS: Install Homebrew (if missing), then install tools via `brew`
 - Backup existing dotfiles to `backups/dotfile_bk_<timestamp>/`
 - Symlink all config directories into `~` via `stow`
+- Validate setup (check tools + symlinks)
 - Set correct permissions on `~/.ssh/config`
 
 ### Manual stow (pick your tools)
@@ -49,6 +58,18 @@ stow lazygit
 
 ---
 
+## Make Targets
+
+| Target | Description |
+|--------|-------------|
+| `make install` | Run full setup (`setup_full.sh`) |
+| `make docker` | Run minimal Docker setup (`setup_docker.sh`) |
+| `make validate` | Check which dotfiles are symlinked |
+| `make test` | Run shellcheck on setup scripts |
+| `make clean` | Remove all dotfile symlinks (`stow -D`) |
+
+---
+
 ## Docker Install
 
 For containers (no host installs, no stow dependencies):
@@ -56,6 +77,8 @@ For containers (no host installs, no stow dependencies):
 ```bash
 ./setup_docker.sh
 ```
+
+Or: `make docker`
 
 Installs Neovim `v0.11.5` to `/opt` and symlinks `nvim`, `zsh`, `tmux` only.
 
@@ -65,7 +88,8 @@ Installs Neovim `v0.11.5` to `/opt` and symlinks `nvim`, `zsh`, `tmux` only.
 
 ```
 dotfiles/
-├── setup_full.sh              # Full Linux setup (Makalu cluster)
+├── Makefile                   # Common setup tasks
+├── setup_full.sh              # Full setup (Linux & macOS)
 ├── setup_docker.sh            # Minimal Docker container setup
 ├── .env                       # API keys / secrets (gitignored)
 ├── .gitmodules                # Git submodules (oh-my-zsh, TPM, fzf, etc.)
@@ -122,27 +146,29 @@ Run `git submodule update --init --recursive` after clone.
 
 ### `setup_full.sh`
 
-Full workstation setup for Linux (TU Ilmenau Makalu cluster hosts). Handles:
+Full workstation setup for Linux and macOS. Handles:
 
-- **Neovim v0.11.5** — downloads pinned release to `~/.local/bin/nvim` (only if current version differs)
-- **lazygit v0.53.0** — binary install to `~/.local/bin`
-- **GNU Stow** — compiled from source to `~/.local` if missing
-- **tmuxinator** — installed via RubyGems to `~/.local/bin`
+- **Platform detection** — automatically selects Linux or macOS setup path
+- **Linux**: Installs Neovim `v0.11.5`, lazygit `v0.53.0`, GNU Stow, tmuxinator to `~/.local`
+- **macOS**: Installs Homebrew (if missing), then `brew install neovim stow lazygit tmux tmuxinator`
+- **Version pinning** — `NVIM_TARGET` and `LAZYGIT_TARGET` variables, `brew pin neovim` on macOS
+- **Retry logic** — all curl downloads retry up to 3 times on failure
+- **Validation** — verifies tools are installed and symlinks are correct
 - **Dune launcher** — links `dune/bin/dune` → `~/.local/bin/dune`
 - **Dotfile symlinks** — backs up existing configs, then `stow`s all 9 program directories
 - **SSH permissions** — sets `~/.ssh/config` to `600`
 
 ### `setup_docker.sh`
 
-Minimal setup for Docker containers. Installs Neovim to `/opt`, symlinks `nvim`, `zsh`, `tmux` only.
+Minimal setup for Docker containers. Installs Neovim to `/opt`, symlinks `nvim`, `zsh`, `tmux` only. Uses `make docker` in `dune/sandboxes/mentat/Dockerfile.mentat`.
 
 ---
 
 ## Platform Notes
 
-- **Primary platform**: Linux (TU Ilmenau HPC / Makalu compute cluster)
+- **Supported platforms**: Linux (any distro), macOS (Intel & Apple Silicon)
 - **Neovim**: Pinned to `v0.11.5` for compatibility (treesitter branch + lspconfig config target this version)
-- **macOS scripts**: `scripts/macos/` contains macOS-specific helpers (LaTeX OCR)
+- **macOS**: Uses Homebrew for package management; installs automatically if not present
 - **Conda/Miniforge**: Shell init in `.zshrc` expects `~/.miniforge3`
 - **Docker**: Uses user namespace socket (`unix:///run/user/$(id -u)/docker.sock`)
 
