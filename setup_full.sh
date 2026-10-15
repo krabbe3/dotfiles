@@ -39,8 +39,8 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     brew pin neovim
     echo "==> Pinned neovim version: $(neovim --version | head -n 1 | awk '{print $2}')"
 
-elif [[ "$(hostname -s)" =~ ^makalu[0-9]+$ ]]; then
-    echo "==> Linux (Makalu) detected. Using manual downloads..."
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "==> Linux detected. Using manual downloads..."
     # install nvim (v0.11.5 required; needs older glibc compat from neovim-releases)
     INSTALLED_NVIM="$HOME/.local/bin/nvim"
     CURRENT_NVIM=""
