@@ -7,6 +7,7 @@ find . -name ".DS_Store" -exec rm -f {} +
 ###### VERSION REQUIREMENTS ######
 NVIM_TARGET="v0.11.5"
 LAZYGIT_TARGET="v0.53.0"
+TREE_SITTER_TARGET="v0.25.4"
 
 ###### DIRECTORIES & PATH ######
 mkdir -p "$HOME/.local/bin" "$HOME/.local/opt"
@@ -33,7 +34,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     
     # Install required packages via Homebrew
     echo "==> Installing packages via Homebrew..."
-    brew install neovim stow lazygit tmux tmuxinator
+    brew install neovim stow lazygit tmux tmuxinator tree-sitter
     
     # Pin neovim version to prevent updates
     brew pin neovim
@@ -109,6 +110,22 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         fi
     else
         echo "==> tmuxinator already installed, skipping."
+    fi
+
+    # install tree-sitter CLI
+    if ! command -v tree-sitter >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/tree-sitter" ]; then
+        echo "==> Installing tree-sitter CLI..."
+        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/tree-sitter/tree-sitter/releases/download/${TREE_SITTER_TARGET}/tree-sitter.tar.gz" -o "$HOME/.local/opt/tree-sitter.tar.gz"
+        mkdir -p "$HOME/.local/opt/tree-sitter"
+        tar xzf "$HOME/.local/opt/tree-sitter.tar.gz" -C "$HOME/.local/opt/tree-sitter" --strip-components=1
+        rm -f "$HOME/.local/opt/tree-sitter.tar.gz"
+
+        pushd "$HOME/.local/opt/tree-sitter" >/dev/null
+        make
+        make install PREFIX="$HOME/.local"
+        popd >/dev/null
+    else
+        echo "==> tree-sitter CLI already installed, skipping."
     fi
 fi
 
