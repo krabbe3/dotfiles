@@ -6,6 +6,7 @@ find . -name ".DS_Store" -exec rm -f {} +
 
 ###### VERSION REQUIREMENTS ######
 NVIM_TARGET="v0.11.5"
+LAZYGIT_TARGET="v0.53.0"
 
 ###### DIRECTORIES & PATH ######
 mkdir -p "$HOME/.local/bin" "$HOME/.local/opt"
@@ -40,7 +41,7 @@ if [[ "$(hostname -s)" =~ ^makalu[0-9]+$ ]]; then
     # install lazygit
     if ! command -v lazygit >/dev/null 2>&1 && [ ! -x "$HOME/.local/opt/lazygit/lazygit" ]; then
         echo "==> Installing lazygit..."
-        curl -fsSL https://github.com/jesseduffield/lazygit/releases/download/v0.53.0/lazygit_0.53.0_Linux_x86_64.tar.gz -o "$HOME/.local/opt/lazygit.tar.gz"
+        curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_TARGET}/lazygit_${LAZYGIT_TARGET#v}_Linux_x86_64.tar.gz" -o "$HOME/.local/opt/lazygit.tar.gz"
         mkdir -p "$HOME/.local/opt/lazygit"
         tar xzf "$HOME/.local/opt/lazygit.tar.gz" -C "$HOME/.local/opt/lazygit"
         rm -f "$HOME/.local/opt/lazygit.tar.gz"
