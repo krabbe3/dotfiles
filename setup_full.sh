@@ -12,8 +12,35 @@ LAZYGIT_TARGET="v0.53.0"
 mkdir -p "$HOME/.local/bin" "$HOME/.local/opt"
 export PATH="$HOME/.local/bin:$PATH"
 
-###### INSTALL PACKAGES (LINUX / MAKALU) ######
-if [[ "$(hostname -s)" =~ ^makalu[0-9]+$ ]]; then
+###### PLATFORM DETECTION & INSTALL PACKAGES ######
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "==> macOS detected. Using Homebrew..."
+    
+    # Install Homebrew if not present
+    if ! command -v brew >/dev/null 2>&1; then
+        echo "==> Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL --retry 3 --retry-delay 2 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        
+        # Add Homebrew to PATH (Apple Silicon)
+        if [ -d "$HOME/.linuxbrew/bin" ]; then
+            export PATH="$HOME/.linuxbrew/bin:$PATH"
+        elif [ -d "$HOME/.homebrew/bin" ]; then
+            export PATH="$HOME/.homebrew/bin:$PATH"
+        elif [ -d "/opt/homebrew/bin" ]; then
+            export PATH="/opt/homebrew/bin:$PATH"
+        fi
+    fi
+    
+    # Install required packages via Homebrew
+    echo "==> Installing packages via Homebrew..."
+    brew install neovim stow lazygit tmux tmuxinator
+    
+    # Pin neovim version to prevent updates
+    brew pin neovim
+    echo "==> Pinned neovim version: $(neovim --version | head -n 1 | awk '{print $2}')"
+
+elif [[ "$(hostname -s)" =~ ^makalu[0-9]+$ ]]; then
+    echo "==> Linux (Makalu) detected. Using manual downloads..."
     # install nvim (v0.11.5 required; needs older glibc compat from neovim-releases)
     INSTALLED_NVIM="$HOME/.local/bin/nvim"
     CURRENT_NVIM=""
