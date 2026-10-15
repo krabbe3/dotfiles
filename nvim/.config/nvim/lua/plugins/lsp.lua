@@ -74,6 +74,25 @@ return {
                 }
             })
 
+            -- texlab (LaTeX Language Server)
+            vim.lsp.config('texlab', {
+                capabilities = capabilities,
+                settings = {
+                    texlab = {
+                        build = {
+                            executable = 'latexmk',
+                            args = { '-pdf', '-interaction=nonstopmode', '-synctex=1', '%f' },
+                            onSave = true,
+                        },
+                        chktex = {
+                            onOpenAndSave = true,
+                        },
+                        diagnosticsDelay = 300,
+                        formatterLineLength = 80,
+                    },
+                },
+            })
+
             -- -- basedpyright for even better type hints
             -- vim.lsp.config('basedpyright', {
             --     capabilities = capabilities
@@ -87,6 +106,7 @@ return {
             -- Enable servers
             vim.lsp.enable('lua_ls')
             vim.lsp.enable('pylsp')
+            vim.lsp.enable('texlab')
 
             -- KEYMAPS for LSPs
             -- LSP namespace is <leader>s(erver)

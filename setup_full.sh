@@ -40,14 +40,15 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     brew pin neovim
     echo "==> Pinned neovim version: $(neovim --version | head -n 1 | awk '{print $2}')"
 
-    # Install pinned tree-sitter CLI via Cargo
+    # Install cargo packages (treesitter and texlab for nvim lsp mainly)
     if ! command -v tree-sitter >/dev/null 2>&1 && [ ! -x "$HOME/.cargo/bin/tree-sitter" ]; then
         echo "==> Installing tree-sitter CLI via Cargo..."
         export PATH="$HOME/.cargo/bin:$PATH"
         cargo install --locked "tree-sitter-cli@${TREE_SITTER_TARGET#v}"
-        echo "==> tree-sitter CLI installed."
+        cargo install --locked texlab
+        echo "==> cargo packages installed."
     else
-        echo "==> tree-sitter CLI already installed, skipping."
+        echo "==> cargo packages already installed, skipping."
     fi
 
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
