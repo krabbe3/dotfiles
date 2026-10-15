@@ -146,6 +146,24 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     else
         echo "==> tree-sitter CLI already installed, skipping."
     fi
+
+    # install Node.js via nvm
+    if ! command -v nvm >/dev/null 2>&1; then
+        echo "==> Installing nvm..."
+        curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+    fi
+
+    if ! command -v node >/dev/null 2>&1; then
+        echo "==> Installing Node.js (LTS)..."
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+        nvm install --lts
+        nvm use --lts
+    else
+        echo "==> Node.js already installed."
+    fi
 fi
 
 cd "$HOME/dotfiles"
