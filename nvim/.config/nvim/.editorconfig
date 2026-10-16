@@ -10,6 +10,17 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
 
-[*.{py, ipynb}]
+[*.{py,ipynb}]
 indent_style = space
 indent_size = 4
+
+[*.{md,markdown}]
+indent_style = space
+indent_size = 2
+# Prevents stripping two trailing spaces used for Markdown line breaks (<br>)
+trim_trailing_whitespace = false
+
+[*.{tex,ltx,sty,cls,bib}]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
