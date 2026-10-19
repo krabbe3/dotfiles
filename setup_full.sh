@@ -16,12 +16,12 @@ export PATH="$HOME/.local/bin:$PATH"
 ###### PLATFORM DETECTION & INSTALL PACKAGES ######
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "==> macOS detected. Using Homebrew..."
-    
+
     # Install Homebrew if not present
     if ! command -v brew >/dev/null 2>&1; then
         echo "==> Installing Homebrew..."
         /bin/bash -c "$(curl -fsSL --retry 3 --retry-delay 2 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        
+
         # Add Homebrew to PATH (Apple Silicon)
         if [ -d "$HOME/.linuxbrew/bin" ]; then
             export PATH="$HOME/.linuxbrew/bin:$PATH"
@@ -31,10 +31,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
             export PATH="/opt/homebrew/bin:$PATH"
         fi
     fi
-    
+
     # Install required packages via Homebrew
     echo "==> Installing packages via Homebrew..."
-    brew install neovim stow lazygit tmux tmuxinator node rust docker docker-compose docker-buildx miniforge colima
+    brew install neovim stow lazygit tmux tmuxinator node rust docker docker-compose docker-buildx colima
 
     # Initialize Colima (lightweight Docker daemon via VM, required on macOS)
     if ! colima status --json 2>/dev/null | grep -q '"running":true'; then
@@ -93,12 +93,12 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if [ "$CURRENT_NVIM" != "$NVIM_TARGET" ]; then
         echo "==> Neovim '$CURRENT_NVIM' detected (required: $NVIM_TARGET). Installing to ~/.local..."
         curl -fsSL --retry 3 --retry-delay 2 "https://github.com/neovim/neovim-releases/releases/download/${NVIM_TARGET}/nvim-linux-x86_64.tar.gz" -o "$HOME/.local/opt/nvim.tar.gz"
-        
+
         rm -rf "$HOME/.local/opt/nvim"
         mkdir -p "$HOME/.local/opt/nvim"
         tar xzf "$HOME/.local/opt/nvim.tar.gz" -C "$HOME/.local/opt/nvim" --strip-components=1
         rm -f "$HOME/.local/opt/nvim.tar.gz"
-        
+
         ln -sf "$HOME/.local/opt/nvim/bin/nvim" "$HOME/.local/bin/nvim"
         echo "==> Pinned Neovim $NVIM_TARGET installed to ~/.local/bin/nvim."
     else
@@ -124,7 +124,7 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         mkdir -p "$HOME/.local/opt/stow"
         tar xzf "$HOME/.local/opt/stow.tar.gz" -C "$HOME/.local/opt/stow"
         rm -f "$HOME/.local/opt/stow.tar.gz"
-        
+
         STOW_SRC_DIR=$(find "$HOME/.local/opt/stow" -maxdepth 1 -type d -name "stow-*" | head -n 1)
         if [ -n "$STOW_SRC_DIR" ]; then
             pushd "$STOW_SRC_DIR" >/dev/null
