@@ -59,11 +59,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     ln -sfn "$(brew --prefix)/opt/docker-buildx/bin/docker-buildx" "$HOME/.docker/cli-plugins/docker-buildx"
     echo "==> Docker CLI plugins linked."
 
-    # Initialize conda for shell integration (required for dune python env passthrough)
-    if ! grep -q "conda initialize" ~/.zshrc 2>/dev/null; then
-        eval "$(/opt/homebrew/bin/conda shell.zsh hook)" || eval "$(brew --prefix miniforge)/bin/conda shell.zsh hook"
-    fi
-
     # Pin neovim version to prevent updates
     brew pin neovim
     echo "==> Pinned neovim version: $(neovim --version | head -n 1 | awk '{print $2}')"
