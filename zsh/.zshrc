@@ -71,7 +71,9 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 bindkey '^y' autosuggest-accept
 
 # add docker host env var
-export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    export DOCKER_HOST="unix:///run/user/$(id -u)/docker.sock"
+fi
 
 # ai sandbox stuff
 alias aivim='PROJECT_DIR=$(pwd) PROJECT_NAME=$(basename "$PWD") docker compose -f ~/ai-sandbox/docker-compose.yml run --rm -it coder'
