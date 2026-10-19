@@ -34,7 +34,35 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     
     # Install required packages via Homebrew
     echo "==> Installing packages via Homebrew..."
-    brew install neovim stow lazygit tmux tmuxinator node rust
+    brew install neovim stow lazygit tmux tmuxinator node rust docker docker-compose docker-buildx miniforge colima
+
+    # Initialize Colima (lightweight Docker daemon via VM, required on macOS)
+    if ! colima status --json 2>/dev/null | grep -q '"running":true'; then
+        echo "==> Starting Colima..."
+        colima start --cpu 2 --memory 4 --disk 50
+    fi
+
+    # Fix Docker config for Colima (remove Docker Desktop keychain credential store)
+    DOCKER_CONFIG="$HOME/.docker/config.json"
+    if [ -f "$DOCKER_CONFIG" ] && grep -q '"credsStore"' "$DOCKER_CONFIG"; then
+        echo "==> Removing credsStore from Docker config (Colima doesn't use keychain)..."
+        if command -v jq >/dev/null 2>&1; then
+            jq 'del(.credsStore)' "$DOCKER_CONFIG" > "$DOCKER_CONFIG.tmp" && mv "$DOCKER_CONFIG.tmp" "$DOCKER_CONFIG"
+        else
+            sed -i '' '/"credsStore"/d' "$DOCKER_CONFIG"
+        fi
+    fi
+
+    # Link Docker CLI plugins (compose and buildx must live in ~/.docker/cli-plugins/)
+    mkdir -p "$HOME/.docker/cli-plugins"
+    ln -sfn "$(brew --prefix)/opt/docker-compose/bin/docker-compose" "$HOME/.docker/cli-plugins/docker-compose"
+    ln -sfn "$(brew --prefix)/opt/docker-buildx/bin/docker-buildx" "$HOME/.docker/cli-plugins/docker-buildx"
+    echo "==> Docker CLI plugins linked."
+
+    # Initialize conda for shell integration (required for dune python env passthrough)
+    if ! grep -q "conda initialize" ~/.zshrc 2>/dev/null; then
+        eval "$(/opt/homebrew/bin/conda shell.zsh hook)" || eval "$(brew --prefix miniforge)/bin/conda shell.zsh hook"
+    fi
 
     # Pin neovim version to prevent updates
     brew pin neovim
@@ -170,6 +198,13 @@ if [ -f "$DUNE_BIN" ]; then
     mkdir -p "$HOME/.local/bin"
     ln -sf "$DUNE_BIN" "$HOME/.local/bin/dune"
     echo "Linked $DUNE_BIN -> ~/.local/bin/dune"
+fi
+
+# Initialize dune sandbox .env if not present
+if [ ! -f "$SCRIPT_DIR/dune/sandboxes/mentat/.env" ]; then
+    echo "Creating dune sandbox .env from template..."
+    cp "$SCRIPT_DIR/dune/sandboxes/mentat/.env.example" "$SCRIPT_DIR/dune/sandboxes/mentat/.env"
+    echo "Created dune/sandboxes/mentat/.env - edit to add API keys"
 fi
 
 ###### CREATE SOFTLINKS ######
