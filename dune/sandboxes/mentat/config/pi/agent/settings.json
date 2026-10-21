@@ -8,6 +8,7 @@
     "npm:@josephyoung/pi-exit",
     "npm:pi-web-access",
     "npm:@plannotator/pi-extension",
-    "npm:@nehlis/pi-effort"
+    "npm:@nehlis/pi-effort",
+    "npm:pi-subagents"
   ]
 }
