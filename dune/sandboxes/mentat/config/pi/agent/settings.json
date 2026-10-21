@@ -9,8 +9,5 @@
     "npm:pi-web-access",
     "npm:@plannotator/pi-extension",
     "npm:@nehlis/pi-effort"
-  ],
-  "pi-graphify": {
-    "semanticBackend": "openai"
-  }
+  ]
 }
