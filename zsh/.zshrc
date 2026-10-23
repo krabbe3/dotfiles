@@ -44,6 +44,8 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
+# ROS environment
+export PATH="/scratch/lomo3746/Meta4MuliTest/spl-ros-tools-amd64/script:$PATH"
 
 # Select nvim as editor
 export EDITOR='nvim'
