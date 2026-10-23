@@ -9,12 +9,9 @@ services:
       args:
         PYTHON_VERSION: ${PYTHON_VERSION:-3.10}
     user: "0:0"
-    ports:
-      - "${PLANNOTATOR_PORT}:${PLANNOTATOR_PORT}"
-    working_dir: /workspace
+    working_dir: /workspace/${PROJECT_NAME:?PROJECT_NAME not set}
     volumes:
-      # Isolated shallow clone mounted directly to /workspace
-      - ${TARGET_PROJECT}:/workspace:rw
+      - ${TARGET_PROJECT}:/workspace/${PROJECT_NAME}:rw
 
       # Persistent caches and Neovim states (stored in dune/data/)
       - ../../data/nvim/share:/root/.local/share/nvim:rw
@@ -35,9 +32,6 @@ services:
       - GIT_CONFIG_COUNT=${GITLAB_READ_TOKEN:+1}
       - GIT_CONFIG_KEY_0=url.https://oauth2:${GITLAB_READ_TOKEN:-}@gitlab.tu-ilmenau.de/.insteadOf
       - GIT_CONFIG_VALUE_0=https://gitlab.tu-ilmenau.de/
-      # plannotator port
-      - PLANNOTATOR_PORT=${PLANNOTATOR_PORT}
-      - PLANNOTATOR_REMOTE=${PLANNOTATOR_REMOTE}
     security_opt:
       - no-new-privileges:true
     cap_drop:

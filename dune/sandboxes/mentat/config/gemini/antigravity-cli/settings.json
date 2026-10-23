@@ -1,5 +1,6 @@
 {
   "trustedWorkspaces": [
-    "/workspace"
+    "/workspace",
+    "/workspace/dotfiles"
   ]
 }
