@@ -29,6 +29,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 
 # install pi coding agent
 RUN npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+# install claude code
+RUN curl -fsSL https://claude.ai/install.sh | bash
+# install agy
+RUN curl -fsSL https://antigravity.google/cli/install.sh | bash
 
 # Set default shell to zsh
 RUN chsh -s /bin/zsh root
@@ -50,8 +54,6 @@ RUN git config --global url."https://github.com/".insteadOf "git@github.com:" \
 
 # Base installations for mentat
 RUN pip install --no-cache-dir black pip-tools ipython
-RUN pip install --no-cache-dir graphifyy
-RUN graphify pi install
 
 WORKDIR /workspace
 CMD ["/bin/zsh"]

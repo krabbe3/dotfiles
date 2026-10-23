@@ -28,10 +28,10 @@ services:
     environment:
       - HOME=/root
       - TERM=xterm-256color
-      # give read-only PAT to university gitlab
-      - GIT_CONFIG_COUNT=1
-      - "GIT_CONFIG_KEY_0=url.https://oauth2:${GITLAB_READ_TOKEN}@gitlab.tu-ilmenau.de/.insteadOf"
-      - "GIT_CONFIG_VALUE_0=https://gitlab.tu-ilmenau.de/"
+      # Optional GitLab PAT (will be skipped or empty if not provided)
+      - GIT_CONFIG_COUNT=${GITLAB_READ_TOKEN:+1}
+      - GIT_CONFIG_KEY_0=url.https://oauth2:${GITLAB_READ_TOKEN:-}@gitlab.tu-ilmenau.de/.insteadOf
+      - GIT_CONFIG_VALUE_0=https://gitlab.tu-ilmenau.de/
       # plannotator port
       - PLANNOTATOR_PORT=${PLANNOTATOR_PORT}
       - PLANNOTATOR_REMOTE=${PLANNOTATOR_REMOTE}
