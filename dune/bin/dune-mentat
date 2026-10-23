@@ -53,7 +53,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   PROJECT_NAME="$(basename "$GIT_ROOT")"
   TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
   BRANCH_NAME="dune/agent-latest"
-  CLONE_BASE_DIR="/tmp/.dune-clones"
+  CLONE_BASE_DIR="${DUNE_CLONE_DIR:-$HOME/.cache/dune-clones}"
   CLONE_DIR="${CLONE_BASE_DIR}/${PROJECT_NAME}-${TIMESTAMP}"
   ACTIVE_SYMLINK="${CLONE_BASE_DIR}/${PROJECT_NAME}-active"
 

@@ -8,7 +8,7 @@ An ephemeral, isolated development environment designed for autonomous coding ag
 Host Repository (HEAD)
        │
        ▼ (Ephemeral shallow clone: git clone --depth 1, remotes stripped)
-/tmp/.dune-clones/<project>-<timestamp>/  ◄── Symlink: <project>-active
+~/.cache/dune-clones/<project>-<timestamp>/  ◄── Symlink: <project>-active
        │
        ▼ (Bind mount)
 Container Workspace (/workspace)
@@ -27,9 +27,9 @@ Host Branch: dune/agent-latest (Ready for review/merge)
 
 - Complete History Isolation: Clones strictly at HEAD with `--depth 1` and removes the origin remote. The agent cannot inspect past repository history or push to remotes.
 - Continuous Checkpoints: The agent can commit freely to Git. Commits remain isolated within the container until synced or reviewed. On exit, uncommitted work is auto-committed as a snapshot before syncing.
-- Mid-Flight Syncing: A stable symlink (`/tmp/.dune-clones/<project>-active`) allows `dune spice` to pull commits into the host branch while the container is still running.
+- Mid-Flight Syncing: A stable symlink (`~/.cache/dune-clones/<project>-active`) allows `dune spice` to pull commits into the host branch while the container is still running.
 - Single Review Reference: Upon sync or exit, commits are fetched to a single host branch pointer: `dune/agent-latest`.
-- Clean Host State: The ephemeral directory and active symlink in `/tmp/.dune-clones/` are automatically deleted via an exit trap. Your active host working tree remains completely untouched.
+- Clean Host State: The ephemeral directory and active symlink in `~/.cache/dune-clones/` are automatically deleted via an exit trap. Your active host working tree remains completely untouched.
 - AI-Ready Base Image: The Docker image preinstalls the pi coding agent, Neovim (via your dotfiles), git, fzf, ripgrep, Node 22, and graphify.
 - Identical Python via Conda Passthrough: When a Conda env is active on the host, `dune mentat` mounts it at the same path (read-only) and prepends it to the container's `PATH`. The container then runs the exact same Python interpreter and packages as the host. Requires Conda on the host — without an active Conda env, the container falls back to the base image's Python.
 - Persistent Cache Mounts: Dedicated bind mounts for pip and Neovim state keep build artifacts across multiple invocations (`dune/data/`).

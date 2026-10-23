@@ -8,7 +8,7 @@ if [ -z "$GIT_ROOT" ]; then
 fi
 
 PROJECT_NAME="$(basename "$GIT_ROOT")"
-ACTIVE_SYMLINK="/tmp/.dune-clones/${PROJECT_NAME}-active"
+ACTIVE_SYMLINK="${DUNE_CLONE_DIR:-$HOME/.cache/dune-clones}/${PROJECT_NAME}-active"
 
 if [ ! -L "$ACTIVE_SYMLINK" ]; then
   echo "No active Dune sandbox found for $PROJECT_NAME."
