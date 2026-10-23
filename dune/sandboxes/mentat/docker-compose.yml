@@ -23,6 +23,7 @@ services:
       - ./config/pi:/root/.pi:rw
       - ./config/gemini/:/root/.gemini:rw
       - ./config/claude/:/root/.claude:rw
+      - ./config/claude.json:/root/.claude.json:rw
 
 
     environment:
