@@ -3,5 +3,11 @@ data/
 .env.*
 !.env.example
 web-search-cache
-sandboxes/mentat/config/pi/agent/bin
-sandboxes/mentat/config/pi/agent/sessions
+
+# credentials safety net (any depth)
+**/auth.json
+**/.credentials.json
+**/antigravity-oauth-token
+**/*.key
+**/web-search.json
+**/history.jsonl
