@@ -1,0 +1,31 @@
+# ignore everything by default
+*
+!.gitignore
+!*/
+
+# portable config you wrote or chose
+!agent/settings.json
+!agent/AGENTS.md
+!agent/APPEND_SYSTEM.md
+!agent/models.json
+!agent/subagent-tool-description.md
+!agent/agents/
+!agent/agents/**
+!agent/extensions/
+!agent/extensions/**
+!agent/npm/package.json
+
+# never track these (these override the allowlist above)
+agent/auth.json
+web-search.json
+agent/prime-settings.json
+agent/models-store.json
+agent/bin/
+agent/npm/node_modules/
+agent/npm/package-lock.json
+agent/pi-subagents/
+agent/sessions/
+
+# installed package content: keep config.json, drop everything else
+agent/extensions/subagent/**
+!agent/extensions/subagent/config.json

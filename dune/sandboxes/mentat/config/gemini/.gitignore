@@ -1,0 +1,32 @@
+# ignore everything by default
+*
+!.gitignore
+
+# descend into directories so the allowlist below can match
+!*/
+
+# antigravity-cli: portable config only
+!antigravity-cli/settings.json
+
+# top-level config (check for secrets first, see below)
+!config/mcp_config.json
+!config/projects/
+!config/projects/*.json
+
+# never track these, even if the rules above are loosened later
+antigravity-cli/antigravity-oauth-token
+antigravity-cli/installation_id
+antigravity-cli/history.jsonl
+antigravity-cli/conversations/
+antigravity-cli/conversation_summaries.db
+antigravity-cli/brain/
+antigravity-cli/implicit/
+antigravity-cli/jetski_state.pbtxt
+antigravity-cli/log/
+antigravity-cli/cli.log
+antigravity-cli/crashes/
+antigravity-cli/cache/
+antigravity-cli/updater/
+antigravity-cli/bin/
+antigravity-cli/builtin/
+antigravity-cli/last_check.timestamp

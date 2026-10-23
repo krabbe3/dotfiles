@@ -22,8 +22,11 @@ services:
       - ../../data/pip-cache:/root/.cache/pip:rw
 
 
-      # Pi agent configuration
+      # agent configurations
       - ./config/pi:/root/.pi:rw
+      - ./config/gemini/:/root/.gemini:rw
+      - ./config/claude/:/root/.claude:rw
+
 
     environment:
       - HOME=/root

@@ -1,0 +1,9 @@
+# dune/sandboxes/mentat/config/claude/.gitignore
+*
+!.gitignore
+!settings.json
+!CLAUDE.md
+!commands/
+!commands/**
+!agents/
+!agents/**
