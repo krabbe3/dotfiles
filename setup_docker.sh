@@ -41,5 +41,3 @@ for program in "${PROGRAMS[@]}"; do
 done
 
 echo "Finished softlinking files!"
-
-export PATH="/usr/bin:$PATH"
