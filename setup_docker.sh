@@ -15,7 +15,12 @@ mkdir -p /opt
 rm -rf /opt/nvim /usr/local/bin/nvim
 
 echo "==> Downloading Neovim $NVIM_TARGET..."
-curl -fsSL --retry 3 --retry-delay 2 "https://github.com/neovim/neovim-releases/releases/download/${NVIM_TARGET}/nvim-linux-x86_64.tar.gz" -o /opt/nvim.tar.gz
+case "$(uname -m)" in
+  x86_64)        NVIM_URL="https://github.com/neovim/neovim-releases/releases/download/${NVIM_TARGET}/nvim-linux-x86_64.tar.gz" ;;
+  aarch64|arm64) NVIM_URL="https://github.com/neovim/neovim/releases/download/${NVIM_TARGET}/nvim-linux-arm64.tar.gz" ;;
+  *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+esac
+curl -fsSL --retry 3 --retry-delay 2 "$NVIM_URL" -o /opt/nvim.tar.gz
 mkdir -p /opt/nvim
 tar xzf /opt/nvim.tar.gz -C /opt/nvim --strip-components=1
 rm -f /opt/nvim.tar.gz
