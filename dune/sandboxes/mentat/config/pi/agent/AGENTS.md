@@ -1,6 +1,6 @@
 # Globel Pi Instructions
 
-- Root is `/workspace`. Do not traverse outside it.
+- Root is `/workspace/${PROJECT_NAME}`. Do not traverse outside it.
 - Check the project-root AGENTS.md for stack-specific rules.
 - Git Workflow
   - USE `git status` and `git diff` frequently to inspect and self-review your edits.

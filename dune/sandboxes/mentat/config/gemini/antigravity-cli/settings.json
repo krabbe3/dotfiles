@@ -1,6 +1,16 @@
 {
+  "model": "Gemini 3.8 Flash (Medium)",
+  "permissions": {
+    "allow": [
+      "command(ls)",
+      "command(git status)",
+      "command(curl -sL \"https://www.gernekochen.de/burritos-der-tex-mex-hit/\")",
+      "command(which)"
+    ]
+  },
   "trustedWorkspaces": [
     "/workspace",
-    "/workspace/dotfiles"
+    "/workspace/dotfiles",
+    "/workspace/chef"
   ]
 }
