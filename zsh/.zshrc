@@ -56,7 +56,7 @@ export NUMEXPR_NUM_THREADS=1
 
 # Aliases
 # kitty +kitten ssh alias
-alias kssh="kitty +kitten ssh"
+alias kssh="kitty +kitten ssh -YL"
 # lichtblick visualization alias
 alias lichtblick="docker run --rm -p 8080:8080 ghcr.io/lichtblick-suite/lichtblick:latest"
 
