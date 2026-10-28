@@ -5,9 +5,11 @@
       "command(ls)",
       "command(git status)",
       "command(curl -sL \"https://www.gernekochen.de/burritos-der-tex-mex-hit/\")",
-      "command(which)"
+      "command(which)",
+      "command(/usr/bin/python3 -c \"print('hello from python')\")"
     ]
   },
+  "toolPermission": "always-proceed",
   "trustedWorkspaces": [
     "/workspace",
     "/workspace/dotfiles",
