@@ -54,9 +54,11 @@ export MKL_NUM_THREADS=1
 export OMP_NUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1
 
+# Aliases
 # kitty +kitten ssh alias
-# and automatic port forwarding for matplotlib webagg!
-alias kssh="kitty +kitten ssh -YL 8988:localhost:8988"
+alias kssh="kitty +kitten ssh"
+# lichtblick visualization alias
+alias lichtblick="docker run --rm -p 8080:8080 ghcr.io/lichtblick-suite/lichtblick:latest"
 
 # x11 forwarding xquartz display variable
 # Nur setzen, wenn noch kein DISPLAY von SSH/X11 übergeben wurde
