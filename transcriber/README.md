@@ -40,7 +40,7 @@ transcribe-notes --model olmocr path/to/notebook.note path/to/output_dir/
 
 Set `TRANSCRIBER_MODEL=olmocr` to change the default. Output files are named after the notebook, so use a separate output directory per model when comparing.
 
-`--model olmocr` uses its own prompt (`prompt_olmocr.md`), so the rules in `prompt.md` do not apply. Tables come out as HTML. It starts `mlx_vlm.server` on port 8080 (override with `MLX_VLM_PORT`).
+Both models use `prompt.md`. `--model olmocr` starts `mlx_vlm.server` on port 8080 (override with `MLX_VLM_PORT`).
 
 ## Behavior & Cleanup
 - Temporary rendered PNG pages are processed and deleted automatically.

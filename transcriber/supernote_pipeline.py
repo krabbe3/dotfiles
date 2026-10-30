@@ -30,11 +30,12 @@ def load_prompt(filename: str) -> str:
     return prompt_file.read_text(encoding="utf-8").strip()
 
 
+PROMPT = load_prompt("prompt.md")
+
 MODELS = {
     "qwen": {
         "name": QWEN_MODEL,
         "api_url": f"http://{OLLAMA_HOST}/v1/chat/completions",
-        "prompt": load_prompt("prompt.md"),
         "temperature": 0.0,
         "timeout": 180,
         "max_side": None,
@@ -43,7 +44,6 @@ MODELS = {
     "olmocr": {
         "name": OLMOCR_MODEL,
         "api_url": f"http://{MLX_HOST}/v1/chat/completions",
-        "prompt": load_prompt("prompt_olmocr.md"),
         "temperature": 0.1,
         "timeout": 600,
         "max_side": 1288,  # olmOCR expects this longest dimension
@@ -236,10 +236,6 @@ def transcribe_page(img_path: Path, page_num: int, model_key: str) -> str:
     with open(img_path, "rb") as f:
         b64 = base64.b64encode(f.read()).decode("utf-8")
 
-    prompt = model["prompt"]
-    if model_key == "qwen":
-        prompt = f"Page {page_num}:\n{prompt}"
-
     payload = {
         "model": model["name"],
         "temperature": model["temperature"],
@@ -250,7 +246,7 @@ def transcribe_page(img_path: Path, page_num: int, model_key: str) -> str:
                 "content": [
                     {
                         "type": "text",
-                        "text": prompt,
+                        "text": f"Page {page_num}:\n{PROMPT}",
                     },
                     {
                         "type": "image_url",
