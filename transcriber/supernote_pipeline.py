@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import base64
 import os
 import re
@@ -13,44 +14,63 @@ from supernotelib import parser
 from supernotelib.converter import ImageConverter
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost:11434")
-MODEL_NAME = "qwen3-vl:8b-instruct"
-API_URL = f"http://{OLLAMA_HOST}/v1/chat/completions"
+QWEN_MODEL = "qwen3-vl:8b-instruct"
+MLX_HOST = f"127.0.0.1:{os.getenv('MLX_VLM_PORT', '8080')}"
+OLMOCR_MODEL = "mlx-community/olmOCR-2-7B-1025-8bit"
 
 
-# Resolve the prompt file sitting in the same directory as this script
-PROMPT_FILE = Path(__file__).resolve().parent / "prompt.md"
+# Resolve prompt files sitting in the same directory as this script
+PROMPT_DIR = Path(__file__).resolve().parent
 
 
-def load_system_prompt() -> str:
-    if not PROMPT_FILE.is_file():
-        raise FileNotFoundError(
-            f"System prompt file not found at: {PROMPT_FILE}"
-        )
-    return PROMPT_FILE.read_text(encoding="utf-8").strip()
+def load_prompt(filename: str) -> str:
+    prompt_file = PROMPT_DIR / filename
+    if not prompt_file.is_file():
+        raise FileNotFoundError(f"Prompt file not found at: {prompt_file}")
+    return prompt_file.read_text(encoding="utf-8").strip()
 
 
-SYSTEM_PROMPT = load_system_prompt()
+MODELS = {
+    "qwen": {
+        "name": QWEN_MODEL,
+        "api_url": f"http://{OLLAMA_HOST}/v1/chat/completions",
+        "prompt": load_prompt("prompt.md"),
+        "temperature": 0.0,
+        "timeout": 180,
+        "max_side": None,
+        "extra_params": {"keep_alive": "5m"},
+    },
+    "olmocr": {
+        "name": OLMOCR_MODEL,
+        "api_url": f"http://{MLX_HOST}/v1/chat/completions",
+        "prompt": load_prompt("prompt_olmocr.md"),
+        "temperature": 0.1,
+        "timeout": 600,
+        "max_side": 1288,  # olmOCR expects this longest dimension
+        "extra_params": {"max_tokens": 8000},
+    },
+}
 
 
 def ensure_model_available():
-    """Checks if MODEL_NAME is present locally; pulls it automatically if missing."""
+    """Checks if QWEN_MODEL is present locally; pulls it automatically if missing."""
     try:
         res = requests.get(f"http://{OLLAMA_HOST}/api/tags", timeout=5)
         if res.status_code == 200:
             installed = [m["name"] for m in res.json().get("models", [])]
             # Match exact name or base tag without :latest
-            if any(MODEL_NAME in m for m in installed):
+            if any(QWEN_MODEL in m for m in installed):
                 print(
-                    f"Model '{MODEL_NAME}' found. Continuing transcription..."
+                    f"Model '{QWEN_MODEL}' found. Continuing transcription..."
                 )
                 return
     except Exception:
         pass
 
     print(
-        f"Model '{MODEL_NAME}' not found locally. Pulling now (one-time setup)..."
+        f"Model '{QWEN_MODEL}' not found locally. Pulling now (one-time setup)..."
     )
-    subprocess.run(["ollama", "pull", MODEL_NAME], check=True)
+    subprocess.run(["ollama", "pull", QWEN_MODEL], check=True)
 
 
 def ensure_ollama_running() -> subprocess.Popen | None:
@@ -84,15 +104,63 @@ def ensure_ollama_running() -> subprocess.Popen | None:
     )
 
 
-def unload_model():
-    """Forces Ollama to evict model weights from unified memory."""
+def ensure_mlx_server_running() -> subprocess.Popen | None:
+    """Starts mlx_vlm.server if needed. The first run downloads the model."""
     try:
-        print(f"Evicting {MODEL_NAME} from VRAM...")
-        res = requests.post(
-            f"http://{OLLAMA_HOST}/api/generate",
-            json={"model": MODEL_NAME, "keep_alive": 0},
-            timeout=10,
-        )
+        r = requests.get(f"http://{MLX_HOST}/health", timeout=1.0)
+        if r.status_code == 200:
+            return None
+    except Exception:
+        pass
+
+    print(f"Starting mlx_vlm.server with {OLMOCR_MODEL}...")
+    proc = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "mlx_vlm.server",
+            "--model",
+            OLMOCR_MODEL,
+            "--host",
+            MLX_HOST.split(":")[0],
+            "--port",
+            MLX_HOST.split(":")[1],
+        ],
+        stdout=subprocess.DEVNULL,
+    )
+
+    # /health only answers once the model is downloaded and loaded
+    for _ in range(1800):
+        if proc.poll() is not None:
+            raise RuntimeError(
+                f"mlx_vlm.server exited with code {proc.returncode}."
+            )
+        try:
+            r = requests.get(f"http://{MLX_HOST}/health", timeout=1.0)
+            if r.status_code == 200:
+                print("MLX server is ready.")
+                return proc
+        except Exception:
+            pass
+        time.sleep(1)
+
+    proc.terminate()
+    raise RuntimeError("Timed out waiting for mlx_vlm.server to load.")
+
+
+def unload_model(model_key: str):
+    """Forces the serving backend to evict model weights from unified memory."""
+    name = MODELS[model_key]["name"]
+    try:
+        print(f"Evicting {name} from VRAM...")
+        if model_key == "olmocr":
+            res = requests.post(f"http://{MLX_HOST}/unload", timeout=10)
+        else:
+            res = requests.post(
+                f"http://{OLLAMA_HOST}/api/generate",
+                json={"model": name, "keep_alive": 0},
+                timeout=10,
+            )
         if res.status_code == 200:
             print("VRAM successfully cleared.")
     except Exception as e:
@@ -121,13 +189,15 @@ def export_note_to_png_folder(
     return png_folder, png_files
 
 
-def preprocess_image(src: Path) -> Path:
+def preprocess_image(src: Path, max_side: int | None = None) -> Path:
     """Enhances contrast on fine strokes and sub/superscripts."""
     prep_path = src.parent / f"prep_{src.name}"
     with Image.open(src) as img:
         gray = img.convert("L")
         enhancer = ImageEnhance.Contrast(gray)
         contrasted = enhancer.enhance(1.35)
+        if max_side:
+            contrasted.thumbnail((max_side, max_side))
         contrasted.save(prep_path, format="PNG")
     return prep_path
 
@@ -152,21 +222,35 @@ def clean_latex(text: str) -> str:
     return text
 
 
-def transcribe_page(img_path: Path, page_num: int) -> str:
+def normalize_olmocr(text: str) -> str:
+    """Drops olmOCR's YAML front matter and converts math delimiters to $."""
+    text = re.sub(r"\A\s*---\n.*?\n---\s*", "", text, flags=re.DOTALL)
+    # The lookbehind keeps LaTeX line breaks like \\[2pt] intact
+    text = re.sub(r"(?<!\\)\\\((.+?)\\\)", r"$\1$", text, flags=re.DOTALL)
+    text = re.sub(r"(?<!\\)\\\[(.+?)\\\]", r"$$\1$$", text, flags=re.DOTALL)
+    return text
+
+
+def transcribe_page(img_path: Path, page_num: int, model_key: str) -> str:
+    model = MODELS[model_key]
     with open(img_path, "rb") as f:
         b64 = base64.b64encode(f.read()).decode("utf-8")
 
+    prompt = model["prompt"]
+    if model_key == "qwen":
+        prompt = f"Page {page_num}:\n{prompt}"
+
     payload = {
-        "model": MODEL_NAME,
-        "temperature": 0.0,
-        "keep_alive": "5m",
+        "model": model["name"],
+        "temperature": model["temperature"],
+        **model["extra_params"],
         "messages": [
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "text",
-                        "text": f"Page {page_num}:\n{SYSTEM_PROMPT}",
+                        "text": prompt,
                     },
                     {
                         "type": "image_url",
@@ -176,13 +260,17 @@ def transcribe_page(img_path: Path, page_num: int) -> str:
             }
         ],
     }
-    res = requests.post(API_URL, json=payload, timeout=180)
+    res = requests.post(
+        model["api_url"], json=payload, timeout=model["timeout"]
+    )
     res.raise_for_status()
     raw = res.json()["choices"][0]["message"]["content"]
+    if model_key == "olmocr":
+        raw = normalize_olmocr(raw)
     return clean_latex(raw)
 
 
-def process_single_note(note_path: Path, out_dir: Path):
+def process_single_note(note_path: Path, out_dir: Path, model_key: str):
     print(f"\nProcessing notebook: {note_path.name}")
     out_dir.mkdir(parents=True, exist_ok=True)
     target_md = out_dir / f"{note_path.stem}.md"
@@ -198,9 +286,11 @@ def process_single_note(note_path: Path, out_dir: Path):
         md_output = [f"# {note_path.stem}\n"]
         for idx, page_path in enumerate(png_files, start=1):
             print(f"  Transcribing page {idx}/{len(png_files)}...")
-            prep_img = preprocess_image(page_path)
+            prep_img = preprocess_image(
+                page_path, MODELS[model_key]["max_side"]
+            )
             try:
-                content = transcribe_page(prep_img, idx)
+                content = transcribe_page(prep_img, idx, model_key)
                 if content.strip():
                     md_output.append(content.strip())
             finally:
@@ -217,39 +307,51 @@ def process_single_note(note_path: Path, out_dir: Path):
 
 
 def main():
-    if len(sys.argv) < 3:
-        print(
-            "Usage: python supernote_pipeline.py <file.note | directory_of_notes> <out_dir>"
-        )
-        sys.exit(1)
+    arg_parser = argparse.ArgumentParser(
+        description="Transcribe Supernote .note files into Markdown."
+    )
+    arg_parser.add_argument("src", help="A .note file or directory of notes")
+    arg_parser.add_argument("out_dir", help="Output directory")
+    arg_parser.add_argument(
+        "--model",
+        choices=MODELS,
+        default=os.getenv("TRANSCRIBER_MODEL", "qwen"),
+        help="Vision model (default: $TRANSCRIBER_MODEL, else qwen)",
+    )
+    args = arg_parser.parse_args()
 
-    src = Path(sys.argv[1]).expanduser()
-    dst = Path(sys.argv[2]).expanduser()
+    src = Path(args.src).expanduser()
+    dst = Path(args.out_dir).expanduser()
+    model_key = args.model
 
-    ollama_proc = ensure_ollama_running()
-    ensure_model_available()
+    if model_key == "olmocr":
+        server_proc = ensure_mlx_server_running()
+    else:
+        server_proc = ensure_ollama_running()
+        ensure_model_available()
     print(
-        f"Pipeline running using model: {MODEL_NAME} at http://{OLLAMA_HOST}"
+        f"Pipeline running using model: {MODELS[model_key]['name']} "
+        f"at {MODELS[model_key]['api_url']}"
     )
 
     try:
         if src.is_file() and src.suffix == ".note":
-            process_single_note(src, dst)
+            process_single_note(src, dst, model_key)
         elif src.is_dir():
             notes = sorted(src.rglob("*.note"))
             if not notes:
                 print(f"No .note files found in {src}")
                 return
             for note in notes:
-                process_single_note(note, dst)
+                process_single_note(note, dst, model_key)
         else:
             print(f"Invalid input path: {src}")
     finally:
-        unload_model()
-        if ollama_proc:
-            print("Terminating spawned Ollama daemon...")
-            ollama_proc.terminate()
-            ollama_proc.wait()
+        unload_model(model_key)
+        if server_proc:
+            print("Terminating spawned model server...")
+            server_proc.terminate()
+            server_proc.wait()
 
 
 if __name__ == "__main__":
@@ -257,5 +359,4 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("\nAborted by user.")
-        unload_model()
         sys.exit(130)
