@@ -79,9 +79,6 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     export DOCKER_HOST="unix:///run/user/$(id -u)/docker.sock"
 fi
 
-# ai sandbox stuff
-alias aivim='PROJECT_DIR=$(pwd) PROJECT_NAME=$(basename "$PWD") docker compose -f ~/ai-sandbox/docker-compose.yml run --rm -it coder'
-
 # transcriber command for note conversion
 [[ -f "$HOME/dotfiles/transcriber/transcribe-notes.zsh" ]] && source "$HOME/dotfiles/transcriber/transcribe-notes.zsh"
 
