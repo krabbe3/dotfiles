@@ -2,4 +2,4 @@ backups/dot*
 *.DS_Store
 .env
 *.local
-setup_local.sh
+setup_credentials.sh

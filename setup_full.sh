@@ -293,10 +293,10 @@ fi
 
 ###### MACHINE-LOCAL CONFIG ######
 # Untracked *.local files hold private hosts/identity; templates sit next to them.
-# setup_local.sh (gitignored, copied by hand) creates and links them.
-if [ -f "$SCRIPT_DIR/setup_local.sh" ]; then
-    echo "==> Running setup_local.sh..."
-    DOTFILES="$SCRIPT_DIR" bash "$SCRIPT_DIR/setup_local.sh"
+# setup_credentials.sh (gitignored, copied by hand) creates and links them.
+if [ -f "$SCRIPT_DIR/setup_credentials.sh" ]; then
+    echo "==> Running setup_credentials.sh..."
+    DOTFILES="$SCRIPT_DIR" bash "$SCRIPT_DIR/setup_credentials.sh"
 fi
 while IFS= read -r example; do
     local_file="${example%.example}"
