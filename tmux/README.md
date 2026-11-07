@@ -75,7 +75,7 @@ current directory, built with plain tmux:
 
 ```
 window "agent":  dune mentat (38%) | nvim . (38%) | shell (24%)
-window "git":    lazygit
+window "git":    lazygit (50%) | shell (50%)   # review agent work: dune diff / undo / snap -l
 ```
 
 - Every pane activates the same Python env (active conda env / venv, or `./.venv`).

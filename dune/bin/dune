@@ -27,7 +27,7 @@ Available commands:
   snap         Snapshot all files (host side, refs/dune/...); -l lists snapshots
   diff         Show changes since a snapshot (default: start of last session); -t opens nvim
   undo         Restore files to a snapshot (default: newest one that differs)
-  ghola        Open the tmux workspace: dune mentat | nvim | shell, plus lazygit
+  ghola        Open the tmux workspace: dune mentat | nvim | shell, and lazygit | shell
                Usage:
                  dune ghola [-t <tmuxinator template>] [-s <session>] [-e <env>] [-d]
                  dune ghola -k [session]

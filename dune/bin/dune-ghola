@@ -10,7 +10,7 @@ Open (or return to) the tmux workspace for the current directory.
 
 Default layout (plain tmux, no tmuxinator needed):
   window "agent":  dune mentat (38%) | nvim (38%) | shell (24%)
-  window "git":    lazygit
+  window "git":    lazygit (50%) | shell (50%) for dune diff / undo / snap -l
 Start the harness you want (pi, claude, agy) in the dune pane yourself.
 
 Options:
@@ -122,11 +122,13 @@ AGENT_PANE="$(tmux new-session -d -s "$SESSION" -n agent -c "$ROOT" -x "$COLS" -
 EDITOR_PANE="$(split "$AGENT_PANE" 62)"
 SHELL_PANE="$(split "$EDITOR_PANE" 39)"
 GIT_PANE="$(tmux new-window -d -t "=$SESSION:" -n git -c "$ROOT" -P -F '#{pane_id}')"
+REVIEW_PANE="$(split "$GIT_PANE" 50)"
 
 tmux send-keys -t "$AGENT_PANE" "$PREFIX && dune mentat" Enter
 tmux send-keys -t "$EDITOR_PANE" "$PREFIX && nvim ." Enter
 tmux send-keys -t "$SHELL_PANE" "$PREFIX" Enter
 tmux send-keys -t "$GIT_PANE" "lazygit" Enter
+tmux send-keys -t "$REVIEW_PANE" "$PREFIX" Enter
 tmux select-window -t "=$SESSION:agent"
 tmux select-pane -t "$AGENT_PANE"
 

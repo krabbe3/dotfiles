@@ -136,10 +136,12 @@ dune ghola -k [session]              Kill the tmux session of this directory (or
 
 ```Plaintext
 window "agent":  ┌ dune mentat (38%) ┬ nvim . (38%) ┬ shell (24%) ┐
-window "git":    lazygit
+window "git":    ┌ lazygit (50%) ┬ shell (50%) ┐
 ```
 
 - No harness starts by itself: start `pi`, `claude` or `agy` in the dune pane when the container is up.
+- The "git" window holds all version control: lazygit to stage and commit, and a shell next to it for
+  reviewing agent work with `dune diff` / `dune diff -t`, `dune undo` and `dune snap -l`.
 - Every pane activates the same Python env: `-e <conda env or venv path>`, else the active venv / conda
   env, else `./.venv`. Only `conda activate` runs per pane; `.zshrc` already set conda up.
 - Pane sizes are percentages, so the layout fits any terminal (tmux >= 3.1 uses `-l N%`, older `-p N`).
@@ -252,7 +254,7 @@ dotfiles/dune/
 │   ├── dune-mentat           # sandbox CLI entrypoint and lifecycle manager
 │   ├── dune-spice            # fetch isolated sandbox commits to the host
 │   ├── dune-snap             # snap / diff / undo (host-side snapshots)
-│   └── dune-ghola            # tmux workspace (dune | nvim | shell, lazygit)
+│   └── dune-ghola            # tmux workspace (dune | nvim | shell, lazygit | shell)
 ├── sandboxes/
 │   └── mentat/
 │       ├── .env              # Global default sandbox environment (gitignored, copy .env.example)

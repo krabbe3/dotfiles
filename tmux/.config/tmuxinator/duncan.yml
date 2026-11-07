@@ -18,8 +18,10 @@ windows:
         - ""
 
   - git:
+      layout: even-horizontal
       panes:
         - lazygit
+        - ""   # dune diff / undo / snap -l
 
   - explorer:
       panes:
