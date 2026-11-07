@@ -392,6 +392,15 @@ mkdir -p "$DUNE_DIR/data/pip-cache" \
          "$DUNE_DIR/data/nvim/share" \
          "$DUNE_DIR/data/nvim/state"
 
+# Claude Code state file is mounted as a file; if it is missing, docker would
+# create a directory in its place (an empty one from earlier runs is replaced)
+CLAUDE_JSON="$SANDBOX_DIR/config/claude.json"
+if [[ -d "$CLAUDE_JSON" ]]; then
+  rmdir "$CLAUDE_JSON" 2>/dev/null ||
+    { echo "Error: $CLAUDE_JSON is a non-empty directory; remove it and retry." >&2; exit 1; }
+fi
+[[ -f "$CLAUDE_JSON" ]] || echo '{}' > "$CLAUDE_JSON"
+
 # 7. Build Python image on demand or on forced rebuild
 if [ "$FORCE_REBUILD" = true ]; then
   echo "==> Rebuild requested. Building dune-python:${PYTHON_VERSION} (clean)..."
