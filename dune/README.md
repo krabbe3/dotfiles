@@ -125,10 +125,30 @@ dune snap [-m <msg>] [-l]            Snapshot all files / list snapshots (see Sn
 dune diff [-t] [<snap>]              Changes since a snapshot (default: session start)
 dune undo [-y] [<snap>] [-- <paths>] Restore files to a snapshot
 
-dune ghola <template> [session_name] [conda_env]
-                                     Resurrect workspace layout (editor/git/explorer) via tmuxinator
-dune ghola -k [session_name]         Kill the tmux session for this project
+dune ghola [-t <template>] [-s <session>] [-e <env>] [-d]
+                                     Open (or return to) the tmux workspace of this directory
+dune ghola -k [session]              Kill the tmux session of this directory (or the named one)
 ```
+
+## Workspace (`dune ghola`)
+
+`dune ghola` opens a tmux session for the current directory, in plain tmux (no tmuxinator needed):
+
+```Plaintext
+window "agent":  ┌ dune mentat (38%) ┬ nvim . (38%) ┬ shell (24%) ┐
+window "git":    lazygit
+```
+
+- No harness starts by itself: start `pi`, `claude` or `agy` in the dune pane when the container is up.
+- Every pane activates the same Python env: `-e <conda env or venv path>`, else the active venv / conda
+  env, else `./.venv`. Only `conda activate` runs per pane; `.zshrc` already set conda up.
+- Pane sizes are percentages, so the layout fits any terminal (tmux >= 3.1 uses `-l N%`, older `-p N`).
+- Session name: `<dir>-<hash of path>`, safe for tmux and unique per folder; `-s` overrides it.
+- Running it again returns to the session; inside tmux it switches client instead of nesting.
+- `-d` creates the session without attaching; `-k` kills it. Closing the session (or a pane) ends
+  `dune mentat` cleanly: the session-end snapshot (live) or the fetch to `dune/agent-<time>` (isolated) still happens.
+- `-t <template>` uses a tmuxinator template instead, e.g. `-t duncan`
+  (`tmux/.config/tmuxinator/duncan.yml`, same layout with a fixed-size layout string).
 
 ## Environment Passthrough
 
@@ -232,7 +252,7 @@ dotfiles/dune/
 │   ├── dune-mentat           # sandbox CLI entrypoint and lifecycle manager
 │   ├── dune-spice            # fetch isolated sandbox commits to the host
 │   ├── dune-snap             # snap / diff / undo (host-side snapshots)
-│   └── dune-ghola            # tmuxinator layout helper
+│   └── dune-ghola            # tmux workspace (dune | nvim | shell, lazygit)
 ├── sandboxes/
 │   └── mentat/
 │       ├── .env              # Global default sandbox environment (gitignored, copy .env.example)

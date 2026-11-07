@@ -231,7 +231,11 @@ if [[ "$ISOLATED" = true && "$IS_GIT" = true ]]; then
     fi
     return 0
   }
-  trap cleanup EXIT INT TERM
+  # signals (HUP: tmux pane/session closed) exit, which runs cleanup once
+  trap cleanup EXIT
+  trap 'exit 129' HUP
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
 else
   # Live: the real project, mounted at the same path as on the host.
   # The agent edits your files directly; .git is read-only, so it can read
@@ -279,7 +283,11 @@ else
       echo "==> Review the session:  dune diff      (in nvim: dune diff -t)"
       echo "==> Undo it:             dune undo $(cd "$GIT_ROOT" && "$SNAP" snap -l | awk '/session start/ {print $2; exit}')"
     }
+    # signals (HUP: tmux pane/session closed) exit, which runs live_cleanup once
     trap live_cleanup EXIT
+    trap 'exit 129' HUP
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
   fi
 
   if [[ -f "$TARGET_DIR/.env" ]]; then
