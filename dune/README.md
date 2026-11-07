@@ -105,9 +105,10 @@ Host Branch: dune/agent-latest (git fetch ... HEAD:dune/agent-latest --force)
 ## Commands
 
 ```Plaintext
-dune mentat [-i] [-p <python_version>] [-r]
+dune mentat [-i] [-g] [-p <python_version>] [-r]
                                      Launch the AI sandbox on the current project (live mode)
     -i, --isolated                Shallow clone instead; agent commits go to dune/agent-latest
+    -g, --gitlab                  Give the agent the GitLab token for this session (see below)
     -p, --py, --python <version>  Specify Python version (default: auto-detected from the active
                                   host Conda env, otherwise 3.10)
     -r, --rebuild                 Force clean image rebuild (--no-cache)
@@ -132,7 +133,22 @@ Container environment is assembled in layers (later files override earlier ones)
 
 Additionally, a `DUNE_DATA_MOUNTS` variable in either `.env` adds extra bind mounts at runtime, comma-separated. Entries without a `:mode` suffix default to `:ro`, and entries with a single path are mapped to the same path inside the container.
 
-The compose file also exports a read-only GitLab PAT (`GITLAB_READ_TOKEN` in the sandbox `.env`) for university GitLab, and mounts the pi agent configuration from `sandboxes/mentat/config/pi/` to `/root/.pi` inside the container.
+### GitLab Token (`--gitlab`)
+
+For private packages on the university GitLab, set in `sandboxes/mentat/.env` (gitignored):
+
+```bash
+DUNE_GITLAB_HOST=<gitlab host>
+GITLAB_READ_TOKEN=<token with read_repository scope>
+```
+
+By default the token is **not** available in the sandbox: it is blanked in the container
+environment and left out of the `.env` copied into isolated clones. With `dune mentat --gitlab`, the
+agent gets it for that session, and git rewrites `https://<host>/`, `git@<host>:` and
+`ssh://git@<host>/` URLs to use it, so `pip install git+https://...` / `git+ssh://...` work.
+The token is then readable by the agent and via `docker inspect`; keep its scope read-only.
+
+The pi agent configuration is mounted from `sandboxes/mentat/config/pi/` to `/root/.pi`.
 
 ### Python Environment Passthrough
 

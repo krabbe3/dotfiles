@@ -18,6 +18,7 @@ PROJECT_NAME="$(basename "$TARGET_DIR")"
 SELECTED_PY=""
 FORCE_REBUILD=false
 ISOLATED=false
+GITLAB=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -31,6 +32,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -i|--isolated)
       ISOLATED=true
+      shift
+      ;;
+    -g|--gitlab)
+      GITLAB=true
       shift
       ;;
     *)
@@ -62,6 +67,37 @@ fi
 # Python version of the image: -p, else the host env's, else 3.10
 export PYTHON_VERSION="${SELECTED_PY:-${ENV_VER:-3.10}}"
 echo "==> Runtime: Python $PYTHON_VERSION"
+
+# Read KEY from the shell environment, else from the sandbox .env
+sandbox_env() {
+  local val="${!1:-}"
+  if [[ -z "$val" && -f "$SANDBOX_DIR/.env" ]]; then
+    val="$(grep -E "^$1=" "$SANDBOX_DIR/.env" | tail -n 1 | cut -d '=' -f2- | tr -d '\r"'"'"'' || true)"
+  fi
+  printf '%s' "$val"
+}
+
+# GitLab token: blanked in the container (it also arrives via env_file) unless
+# --gitlab; then git rewrites https and ssh URLs of the GitLab host to use it,
+# so 'pip install git+https://...' and 'git+ssh://git@...' URLs both work.
+GITLAB_ENV=(-e GITLAB_READ_TOKEN=)
+if [[ "$GITLAB" = true ]]; then
+  GITLAB_HOST="$(sandbox_env DUNE_GITLAB_HOST)"
+  GITLAB_TOKEN="$(sandbox_env GITLAB_READ_TOKEN)"
+  if [[ -z "$GITLAB_HOST" || -z "$GITLAB_TOKEN" ]]; then
+    echo "Error: --gitlab needs DUNE_GITLAB_HOST and GITLAB_READ_TOKEN in $SANDBOX_DIR/.env" >&2
+    exit 1
+  fi
+  GITLAB_URL="https://oauth2:${GITLAB_TOKEN}@${GITLAB_HOST}/"
+  GITLAB_ENV=(
+    -e GITLAB_READ_TOKEN="$GITLAB_TOKEN"
+    -e GIT_CONFIG_COUNT=3
+    -e GIT_CONFIG_KEY_0="url.${GITLAB_URL}.insteadOf" -e GIT_CONFIG_VALUE_0="https://${GITLAB_HOST}/"
+    -e GIT_CONFIG_KEY_1="url.${GITLAB_URL}.insteadOf" -e GIT_CONFIG_VALUE_1="git@${GITLAB_HOST}:"
+    -e GIT_CONFIG_KEY_2="url.${GITLAB_URL}.insteadOf" -e GIT_CONFIG_VALUE_2="ssh://git@${GITLAB_HOST}/"
+  )
+  echo "==> GitLab token for $GITLAB_HOST is available to the agent in this session"
+fi
 
 # 3. File ownership: root in the container must map to the host user.
 #    True for rootless Docker and for Colima on macOS; rootful Docker on Linux
@@ -123,7 +159,12 @@ if [[ "$ISOLATED" = true && "$IS_GIT" = true ]]; then
   elif [[ -f "$SANDBOX_DIR/.env" ]]; then
     echo "==> Using default sandbox .env"
     export PROJECT_ENV_FILE="/dev/null"
-    cp "$SANDBOX_DIR/.env" "$CLONE_DIR/.env"
+    # the GitLab token stays out of the workspace unless --gitlab
+    if [[ "$GITLAB" = true ]]; then
+      cp "$SANDBOX_DIR/.env" "$CLONE_DIR/.env"
+    else
+      grep -v '^GITLAB_READ_TOKEN=' "$SANDBOX_DIR/.env" > "$CLONE_DIR/.env" || true
+    fi
   else
     export PROJECT_ENV_FILE="/dev/null"
   fi
@@ -312,5 +353,5 @@ if [ "$DUNE_MODE" = isolated ]; then
 fi
 
 # 8. Launch container: entrypoint.sh sets up Python, then starts zsh
-DOCKER_BUILDKIT=1 docker compose run "${EXTRA_VOLUMES[@]}" "${PY_ENV[@]}" -w "$WORK_DIR" -e DUNE_MODE="$DUNE_MODE" \
+DOCKER_BUILDKIT=1 docker compose run "${EXTRA_VOLUMES[@]}" "${PY_ENV[@]}" "${GITLAB_ENV[@]}" -w "$WORK_DIR" -e DUNE_MODE="$DUNE_MODE" \
   --service-ports --rm dev /bin/bash /opt/dune/entrypoint.sh
