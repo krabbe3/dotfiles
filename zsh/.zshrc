@@ -57,9 +57,9 @@ alias kssh="kitty +kitten ssh -Y"
 # lichtblick visualization alias
 alias lichtblick="docker run --rm -p 8080:8080 ghcr.io/lichtblick-suite/lichtblick:latest"
 
-# x11 forwarding xquartz display variable
+# x11 forwarding xquartz display variable (macOS only)
 # Nur setzen, wenn noch kein DISPLAY von SSH/X11 übergeben wurde
-if [ -z "$DISPLAY" ]; then
+if [[ "$OSTYPE" == "darwin"* && -z "$DISPLAY" ]]; then
     export DISPLAY=:0
 fi
 
@@ -71,8 +71,8 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 # accept suggestion <C-y>
 bindkey '^y' autosuggest-accept
 
-# add docker host env var
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+# add docker host env var (rootless docker, only where its socket exists)
+if [[ -S "/run/user/$(id -u)/docker.sock" ]]; then
     export DOCKER_HOST="unix:///run/user/$(id -u)/docker.sock"
 fi
 
