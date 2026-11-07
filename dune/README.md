@@ -9,7 +9,7 @@ Two modes:
   nvim at the same time. `.git` is mounted read-only, so the agent can read history
   but cannot commit, branch, stash or install git hooks. You review with `git diff` and commit.
 - **Isolated (`-i`):** the agent works in a throwaway shallow clone and commits there.
-  Its commits come back to the host as branch `dune/agent-latest`. Good for long
+  Its commits come back to the host as branch `dune/agent-<time>`. Good for long
   unattended runs that should not touch your working tree.
 
 ## Live Mode
@@ -80,20 +80,24 @@ git commit                  # keep the rest
 Host Repository (HEAD)
        │
        ▼ (Ephemeral shallow clone: git clone --depth 1, remotes stripped)
-~/.cache/dune-clones/<project>-<timestamp>/  ◄── Symlink: <project>-active
+~/.cache/dune-clones/<project>-<time>/
        │
        ▼ (Bind mount, same path)
 Container: agent runs commands, installs packages, makes commits
        │
-       ├─► Mid-flight: `dune spice` pulls active commits (to dune/agent-latest) to host anytime
+       ├─► Mid-flight: `dune spice` fetches the commits to the host anytime
        │
        ▼ (User exits container: exit / Ctrl+D)
-Host Branch: dune/agent-latest (git fetch ... HEAD:dune/agent-latest --force)
+Host branch dune/agent-<time>   (one per session; dune/agent-latest points to the newest)
 ```
 
 - Clones strictly at HEAD with `--depth 1` and removes the origin remote: the agent cannot see past history or push.
 - Uncommitted host edits and gitignored files are not in the clone.
-- On exit, uncommitted work is auto-committed and fetched to `dune/agent-latest`; the clone and the active symlink are deleted.
+- On exit, uncommitted work is auto-committed and the clone's commits are fetched to `dune/agent-<time>`;
+  `dune/agent-latest` moves there too (unless you have it checked out). Then the clone is deleted.
+- **If the fetch fails, the clone is kept** and its path printed. `dune spice` recovers it later.
+- Several isolated sessions on the same repo do not interfere: each has its own clone and branch.
+- Old session branches stay until you delete them: `git branch -D dune/agent-<time>`.
 
 ## Shared Features
 
@@ -107,14 +111,15 @@ Host Branch: dune/agent-latest (git fetch ... HEAD:dune/agent-latest --force)
 ```Plaintext
 dune mentat [-i] [-g] [-p <python_version>] [-r] [--rebuild-env]
                                      Launch the AI sandbox on the current project (live mode)
-    -i, --isolated                Shallow clone instead; agent commits go to dune/agent-latest
+    -i, --isolated                Shallow clone instead; agent commits go to dune/agent-<time>
     -g, --gitlab                  Give the agent the GitLab token for this session (see below)
     --rebuild-env                 macOS: rebuild the Linux copy of the active env
     -p, --py, --python <version>  Specify Python version (default: auto-detected from the active
                                   host Conda env, otherwise 3.10)
     -r, --rebuild                 Force clean image rebuild (--no-cache)
 
-dune spice                           (isolated mode) Fetch in-flight commits to dune/agent-latest
+dune spice                           (isolated mode) Fetch commits of running or kept clones to
+                                     dune/agent-<time>; move dune/agent-latest to the newest
 
 dune snap [-m <msg>] [-l]            Snapshot all files / list snapshots (see Snapshots)
 dune diff [-t] [<snap>]              Changes since a snapshot (default: session start)
@@ -225,7 +230,7 @@ dotfiles/dune/
 ├── bin/
 │   ├── dune                  # entry-level dispatcher
 │   ├── dune-mentat           # sandbox CLI entrypoint and lifecycle manager
-│   ├── dune-spice            # mid-flight sync helper (isolated mode)
+│   ├── dune-spice            # fetch isolated sandbox commits to the host
 │   ├── dune-snap             # snap / diff / undo (host-side snapshots)
 │   └── dune-ghola            # tmuxinator layout helper
 ├── sandboxes/

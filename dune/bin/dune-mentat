@@ -132,13 +132,13 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 fi
 
 if [[ "$ISOLATED" = true && "$IS_GIT" = true ]]; then
-  # Ephemeral shallow clone: agent may commit freely, results land on dune/agent-latest
+  # Ephemeral shallow clone: agent may commit freely. On exit its commits land on
+  # dune/agent-<time> (one branch per session), and dune/agent-latest moves there.
   DUNE_MODE="isolated"
   TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-  BRANCH_NAME="dune/agent-latest"
+  BRANCH_NAME="dune/agent-$TIMESTAMP"
   CLONE_BASE_DIR="${DUNE_CLONE_DIR:-$HOME/.cache/dune-clones}"
   CLONE_DIR="${CLONE_BASE_DIR}/${PROJECT_NAME}-${TIMESTAMP}"
-  ACTIVE_SYMLINK="${CLONE_BASE_DIR}/${PROJECT_NAME}-active"
 
   if ! git -C "$GIT_ROOT" diff --quiet || ! git -C "$GIT_ROOT" diff --cached --quiet; then
     echo "==> Warning: Working tree has uncommitted edits. Only committed HEAD is cloned."
@@ -149,11 +149,11 @@ if [[ "$ISOLATED" = true && "$IS_GIT" = true ]]; then
   echo "==> Mode: isolated (shallow clone, commits go to $BRANCH_NAME)"
   echo "==> Creating isolated shallow clone at: $CLONE_DIR"
 
-  git clone --depth 1 "file://$GIT_ROOT" "$CLONE_DIR" >/dev/null 2>&1
+  git clone -q --depth 1 "file://$GIT_ROOT" "$CLONE_DIR"
   git -C "$CLONE_DIR" remote remove origin >/dev/null 2>&1 || true
-
-  # Maintain a stable active symlink for live syncing from host
-  ln -sfn "$CLONE_DIR" "$ACTIVE_SYMLINK"
+  # lets 'dune spice' find the clones of this repo
+  git -C "$CLONE_DIR" config dune.source "$GIT_ROOT"
+  CLONE_BASE_HEAD="$(git -C "$CLONE_DIR" rev-parse HEAD)"
 
   # Same subdirectory inside the clone as where dune was started
   REL_DIR="${TARGET_DIR#"$GIT_ROOT"}"
@@ -177,40 +177,57 @@ if [[ "$ISOLATED" = true && "$IS_GIT" = true ]]; then
   else
     export PROJECT_ENV_FILE="/dev/null"
   fi
-  # Never let the injected .env reach the auto-commit / dune/agent-latest
+  # Never let the injected .env reach the auto-commit / host branch
   if [[ -d "$CLONE_DIR/.git" ]]; then
     printf '.env\n' >> "$CLONE_DIR/.git/info/exclude"
   fi
 
-  # Trap cleanup on exit, interrupt, or error
+  # Trap cleanup on exit, interrupt, or error. The clone is only deleted once
+  # its commits are safely on the host branch.
+  CLEANED=false
   cleanup() {
+    [[ "$CLEANED" = true || ! -d "$CLONE_DIR" ]] && return 0
+    CLEANED=true
     echo ""
-    echo "==> Cleaning up sandbox clone..."
+    echo "==> Ending isolated session..."
 
-    if [ -d "$CLONE_DIR" ]; then
-      # 1. Check for uncommitted work and preserve it automatically
-      if [ -n "$(git -C "$CLONE_DIR" status --porcelain 2>/dev/null)" ]; then
-        echo "==> Detected uncommitted changes in sandbox: auto-committing..."
-        git -C "$CLONE_DIR" add -A
-        git -C "$CLONE_DIR" commit -m "dune(auto): snapshot of uncommitted agent work on exit" >/dev/null 2>&1 || true
+    # 1. Commit uncommitted work (fixed identity: works without user.name/email)
+    if [ -n "$(git -C "$CLONE_DIR" status --porcelain 2>/dev/null)" ]; then
+      echo "==> Detected uncommitted changes in sandbox: auto-committing..."
+      git -C "$CLONE_DIR" add -A
+      GIT_AUTHOR_NAME="Dune Agent" GIT_AUTHOR_EMAIL="agent@dune.local" \
+      GIT_COMMITTER_NAME="Dune Agent" GIT_COMMITTER_EMAIL="agent@dune.local" \
+        git -C "$CLONE_DIR" commit -q -m "dune(auto): snapshot of uncommitted agent work on exit" ||
+        echo "==> Warning: auto-commit failed"
+    fi
+
+    if [ -n "$(git -C "$CLONE_DIR" status --porcelain 2>/dev/null)" ]; then
+      echo "==> Error: uncommitted work could not be committed. The clone is kept:" >&2
+      echo "           $CLONE_DIR" >&2
+      return 0
+    fi
+
+    SANDBOX_HEAD="$(git -C "$CLONE_DIR" rev-parse HEAD 2>/dev/null || true)"
+    if [[ -z "$SANDBOX_HEAD" || "$SANDBOX_HEAD" == "$CLONE_BASE_HEAD" ]]; then
+      echo "==> No new commits in sandbox."
+      rm -rf "$CLONE_DIR"
+      return 0
+    fi
+
+    # 2. Fetch to this session's branch; keep the clone if that fails
+    if git -C "$GIT_ROOT" fetch -q "$CLONE_DIR" "+HEAD:refs/heads/${BRANCH_NAME}"; then
+      echo "==> Changes preserved on host branch: $BRANCH_NAME"
+      if ! git -C "$GIT_ROOT" branch -f dune/agent-latest "$BRANCH_NAME" >/dev/null 2>&1; then
+        echo "==> Note: dune/agent-latest is checked out, so it was not moved"
       fi
-
-      SANDBOX_HEAD="$(git -C "$CLONE_DIR" rev-parse HEAD 2>/dev/null || true)"
-      HOST_HEAD="$(git -C "$GIT_ROOT" rev-parse HEAD 2>/dev/null || true)"
-
-      if [ -n "$SANDBOX_HEAD" ] && [ "$SANDBOX_HEAD" != "$HOST_HEAD" ]; then
-        echo "==> Ingesting sandbox commits into branch: $BRANCH_NAME"
-        git -C "$GIT_ROOT" fetch "$CLONE_DIR" "HEAD:${BRANCH_NAME}" --force >/dev/null 2>&1 || true
-        echo "==> Changes preserved on host branch: $BRANCH_NAME"
-        echo "==> To review:   git diff HEAD..$BRANCH_NAME"
-        echo "==> To merge:    git merge $BRANCH_NAME"
-        echo "==> To discard:  git branch -D $BRANCH_NAME"
-      else
-        echo "==> No new commits detected in sandbox."
-      fi
-
-      rm -f "$ACTIVE_SYMLINK" 2>/dev/null || true
-      rm -rf "$CLONE_DIR" 2>/dev/null || true
+      echo "==> To review:   git diff HEAD...$BRANCH_NAME"
+      echo "==> To merge:    git merge $BRANCH_NAME"
+      echo "==> To discard:  git branch -D $BRANCH_NAME"
+      rm -rf "$CLONE_DIR"
+    else
+      echo "==> Error: could not fetch the sandbox commits. The clone is kept:" >&2
+      echo "           $CLONE_DIR" >&2
+      echo "           Recover with 'dune spice' (in $GIT_ROOT), then delete the clone." >&2
     fi
     return 0
   }

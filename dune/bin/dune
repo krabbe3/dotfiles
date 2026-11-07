@@ -18,12 +18,12 @@ Available commands:
   mentat       Launch AI sandbox on the current project
                Default (live): agent edits your files directly, .git is read-only
                Options:
-                 -i, --isolated                 Shallow clone instead; agent commits go to dune/agent-latest
+                 -i, --isolated                 Shallow clone instead; agent commits go to dune/agent-<time>
                  -g, --gitlab                   Give the agent the GitLab token for this session
                  --rebuild-env                  macOS: rebuild the Linux copy of the active env
                  -p, --py, --python <version>   Python version (default: active Conda env, else 3.10)
                  -r, --rebuild                  Force clean rebuild (--no-cache)
-  spice        (isolated mode) Fetch in-flight commits from the sandbox to dune/agent-latest
+  spice        (isolated mode) Fetch sandbox commits to dune/agent-<time> (also recovers kept clones)
   snap         Snapshot all files (host side, refs/dune/...); -l lists snapshots
   diff         Show changes since a snapshot (default: start of last session); -t opens nvim
   undo         Restore files to a snapshot (default: newest one that differs)
