@@ -203,7 +203,7 @@ if [ ! -f "$SCRIPT_DIR/dune/sandboxes/mentat/.env" ]; then
 fi
 
 ###### CREATE SOFTLINKS ######
-PROGRAMS=(nvim zsh ssh git kitty tmux lazygit supernote)
+PROGRAMS=(nvim zsh ssh git kitty tmux lazygit)
 OLD_DOTFILES="backups/dotfile_bk_$(date -u +"%Y%m%d%H%M%S")"
 
 mkdir -p "$OLD_DOTFILES"

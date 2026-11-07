@@ -26,9 +26,9 @@ test:
 
 clean:
 	@echo "==> Removing all dotfile symlinks..."
-	@for program in nvim zsh ssh git kitty tmux lazygit supernote; do \
+	@for program in nvim zsh ssh git kitty tmux lazygit; do \
 		if [ -d "$$program" ]; then \
-			stow -v --target="$HOME" -D "$$program" 2>/dev/null || true; \
+			stow -v --target="$$HOME" -D "$$program" 2>/dev/null || true; \
 		fi \
 	done
 	@echo "Done. Original dotfiles (if any) are in backups/"
