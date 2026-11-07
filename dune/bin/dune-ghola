@@ -9,8 +9,8 @@ Usage: dune ghola [-t <template>] [-s <session>] [-e <env>] [-d]
 Open (or return to) the tmux workspace for the current directory.
 
 Default layout (plain tmux, no tmuxinator needed):
-  window "agent":  dune mentat (38%) | nvim (38%) | shell (24%)
-  window "git":    lazygit (50%) | shell (50%) for dune diff / undo / snap -l
+  window "agent":  agent: dune mentat (38%) | editor: nvim (38%) | terminal: tests, runs (24%)
+  window "git":    lazygit (50%) | review: dune diff / undo / snap -l (50%)
 Start the harness you want (pi, claude, agy) in the dune pane yourself.
 
 Options:
