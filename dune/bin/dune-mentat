@@ -175,6 +175,28 @@ else
   fi
   WORK_DIR="$TARGET_DIR"
 
+  # Host-side snapshots: at start, every few minutes while files change, at exit
+  if [[ "$IS_GIT" = true ]]; then
+    SNAP="$DUNE_DIR/bin/dune-snap"
+    (cd "$GIT_ROOT" && "$SNAP" snap -f -q -m "session start")
+    (
+      cd "$GIT_ROOT"
+      while sleep "${DUNE_SNAP_INTERVAL:-180}"; do
+        "$SNAP" snap -q -m "auto" >/dev/null 2>&1 || true
+      done
+    ) &
+    SNAP_LOOP_PID=$!
+
+    live_cleanup() {
+      kill "$SNAP_LOOP_PID" 2>/dev/null || true
+      (cd "$GIT_ROOT" && "$SNAP" snap -q -m "session end") || true
+      echo ""
+      echo "==> Review the session:  dune diff      (in nvim: dune diff -t)"
+      echo "==> Undo it:             dune undo $(cd "$GIT_ROOT" && "$SNAP" snap -l | awk '/session start/ {print $2; exit}')"
+    }
+    trap live_cleanup EXIT
+  fi
+
   if [[ -f "$TARGET_DIR/.env" ]]; then
     export PROJECT_ENV_FILE="$TARGET_DIR/.env"
   else

@@ -29,10 +29,50 @@ nvim (you) ──┐                          ┌── agent
   container, and paths in tracebacks match your machine.
 - **Read-only git.** `git status/diff/log/blame` work; `add/commit/stash/checkout -b/config` fail.
   For git worktrees the main repo's git dir is mounted read-only.
-- **Your commits stay yours.** Tip: `git add` your own work before handing a task over; `git diff` then shows only the agent's changes.
+- **Your commits stay yours.** Review with `dune diff` (below) and commit yourself. Tip: `git add` your own work before handing a task over; `git diff` then shows only the agent's changes.
 - **Ownership check.** Root in the container must map to your user: true for rootless Docker on Linux
   and Colima on macOS. With rootful Docker, `dune mentat` refuses to start (override: `DUNE_ALLOW_ROOTFUL=1`).
 - Outside a git repo, live mode mounts the current folder with no history to fall back on.
+
+## Snapshots: Review And Undo (`dune snap / diff / undo`)
+
+Snapshots are taken on the host, where `.git` is writable; the agent cannot create or delete them.
+Each one stores all files (tracked and untracked, gitignored ones excluded) as a commit object under
+`refs/dune/<repo>/snap-<time>`. Your branch, `HEAD`, staging area and files are not touched, the
+snapshots do not show up in `git log`, and `git push` does not send them.
+
+In live mode, `dune mentat` snapshots automatically:
+
+- at session start (`session start`)
+- every 3 minutes while files change (`auto`; interval: `DUNE_SNAP_INTERVAL` in seconds)
+- at exit (`session end`), then prints how to review and undo the session
+
+```Plaintext
+dune snap [-m <msg>]          Snapshot now (skipped when nothing changed)
+dune snap -l                  List snapshots, newest first, with changes between them
+dune diff [<snap>] [--stat]   What changed since <snap> (default: start of the last session)
+dune diff -t [<snap>]         Same, in nvim (fugitive difftool, one tab per file)
+dune undo [<snap>] [-- <paths>]
+                              Restore files to <snap> (default: newest snapshot that differs).
+                              Shows what will be reverted and asks; -y skips the question.
+                              Snapshots the current state first, so 'dune undo 1' takes it back.
+```
+
+`<snap>` is a name (`snap-20261107-143012`) or a number from `dune snap -l` (1 = newest; numbers shift
+when new snapshots are added, names do not).
+
+Not covered: gitignored files (`.env`, data dirs, build output). Snapshots older than 7 days are
+pruned once there are more than 50 (`DUNE_SNAP_DAYS`, `DUNE_SNAP_KEEP`).
+
+Typical session:
+
+```bash
+dune mentat                 # pane 1: sandbox (snapshot "session start")
+nvim .                      # pane 2: you, same files; agent edits reload on focus
+dune diff -t                # review what changed this session
+dune undo -- src/model.py   # throw away the agent's changes to one file
+git commit                  # keep the rest
+```
 
 ## Isolated Mode (`dune mentat -i`)
 
@@ -73,6 +113,10 @@ dune mentat [-i] [-p <python_version>] [-r]
     -r, --rebuild                 Force clean image rebuild (--no-cache)
 
 dune spice                           (isolated mode) Fetch in-flight commits to dune/agent-latest
+
+dune snap [-m <msg>] [-l]            Snapshot all files / list snapshots (see Snapshots)
+dune diff [-t] [<snap>]              Changes since a snapshot (default: session start)
+dune undo [-y] [<snap>] [-- <paths>] Restore files to a snapshot
 
 dune ghola <template> [session_name] [conda_env]
                                      Resurrect workspace layout (editor/git/explorer) via tmuxinator
@@ -130,7 +174,8 @@ dotfiles/dune/
 ├── bin/
 │   ├── dune                  # entry-level dispatcher
 │   ├── dune-mentat           # sandbox CLI entrypoint and lifecycle manager
-│   ├── dune-spice            # mid-flight sync helper
+│   ├── dune-spice            # mid-flight sync helper (isolated mode)
+│   ├── dune-snap             # snap / diff / undo (host-side snapshots)
 │   └── dune-ghola            # tmuxinator layout helper
 ├── sandboxes/
 │   └── mentat/
