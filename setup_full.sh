@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Run from the dotfiles directory where this script lives
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # Dont link DS_Store files
 find . -name ".DS_Store" -exec rm -f {} +
+
+# Fetch zsh/tmux plugin submodules (oh-my-zsh, tpm, ...)
+if [ -e .git ] && command -v git >/dev/null 2>&1; then
+    echo "==> Updating git submodules..."
+    git submodule update --init --recursive
+fi
 
 ###### VERSION REQUIREMENTS ######
 NVIM_TARGET="v0.11.5"
@@ -61,7 +71,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 
     # Pin neovim version to prevent updates
     brew pin neovim
-    echo "==> Pinned neovim version: $(neovim --version | head -n 1 | awk '{print $2}')"
+    echo "==> Pinned neovim version: $(nvim --version | head -n 1 | awk '{print $2}')"
 
     # Install cargo packages (treesitter and texlab for nvim lsp mainly)
     if ! command -v tree-sitter >/dev/null 2>&1 && [ ! -x "$HOME/.cargo/bin/tree-sitter" ]; then
@@ -74,8 +84,18 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "==> cargo packages already installed, skipping."
     fi
 
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+elif [[ "$OSTYPE" == "linux"* ]]; then
     echo "==> Linux detected. Using manual downloads..."
+    case "$(uname -m)" in
+      x86_64)
+        NVIM_URL="https://github.com/neovim/neovim-releases/releases/download/${NVIM_TARGET}/nvim-linux-x86_64.tar.gz"
+        LAZYGIT_ARCH="x86_64" ;;
+      aarch64|arm64)
+        NVIM_URL="https://github.com/neovim/neovim/releases/download/${NVIM_TARGET}/nvim-linux-arm64.tar.gz"
+        LAZYGIT_ARCH="arm64" ;;
+      *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+    esac
+
     # install nvim (v0.11.5 required; needs older glibc compat from neovim-releases)
     INSTALLED_NVIM="$HOME/.local/bin/nvim"
     CURRENT_NVIM=""
@@ -87,7 +107,7 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
     if [ "$CURRENT_NVIM" != "$NVIM_TARGET" ]; then
         echo "==> Neovim '$CURRENT_NVIM' detected (required: $NVIM_TARGET). Installing to ~/.local..."
-        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/neovim/neovim-releases/releases/download/${NVIM_TARGET}/nvim-linux-x86_64.tar.gz" -o "$HOME/.local/opt/nvim.tar.gz"
+        curl -fsSL --retry 3 --retry-delay 2 "$NVIM_URL" -o "$HOME/.local/opt/nvim.tar.gz"
 
         rm -rf "$HOME/.local/opt/nvim"
         mkdir -p "$HOME/.local/opt/nvim"
@@ -103,7 +123,7 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # install lazygit
     if ! command -v lazygit >/dev/null 2>&1 && [ ! -x "$HOME/.local/opt/lazygit/lazygit" ]; then
         echo "==> Installing lazygit..."
-        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_TARGET}/lazygit_${LAZYGIT_TARGET#v}_Linux_x86_64.tar.gz" -o "$HOME/.local/opt/lazygit.tar.gz"
+        curl -fsSL --retry 3 --retry-delay 2 "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_TARGET}/lazygit_${LAZYGIT_TARGET#v}_Linux_${LAZYGIT_ARCH}.tar.gz" -o "$HOME/.local/opt/lazygit.tar.gz"
         mkdir -p "$HOME/.local/opt/lazygit"
         tar xzf "$HOME/.local/opt/lazygit.tar.gz" -C "$HOME/.local/opt/lazygit"
         rm -f "$HOME/.local/opt/lazygit.tar.gz"
@@ -162,8 +182,8 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "==> tree-sitter CLI already installed, skipping."
     fi
 
-    # install Node.js via nvm
-    if ! command -v nvm >/dev/null 2>&1; then
+    # install Node.js via nvm (nvm is a shell function, so check its install dir)
+    if [ ! -s "$HOME/.nvm/nvm.sh" ]; then
         echo "==> Installing nvm..."
         curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
         export NVM_DIR="$HOME/.nvm"
@@ -179,12 +199,11 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     else
         echo "==> Node.js already installed."
     fi
+else
+    echo "==> Warning: unsupported OS '$OSTYPE', skipping package installs."
 fi
 
-cd "$HOME/dotfiles"
-
 ###### DUNE SANDBOX LAUNCHER ######
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DUNE_BIN="$SCRIPT_DIR/dune/bin/dune"
 
 if [ -f "$DUNE_BIN" ]; then
@@ -204,37 +223,80 @@ fi
 
 ###### CREATE SOFTLINKS ######
 PROGRAMS=(nvim zsh ssh git kitty tmux lazygit)
-OLD_DOTFILES="backups/dotfile_bk_$(date -u +"%Y%m%d%H%M%S")"
+OLD_DOTFILES="$SCRIPT_DIR/backups/dotfile_bk_$(date -u +"%Y%m%d%H%M%S")"
 
-mkdir -p "$OLD_DOTFILES"
-backup_if_exists() {
-    if [ -e "$1" ]; then
-        mv "$1" "$OLD_DOTFILES"
-    fi
+# Move $HOME/<path> into the backup dir, keeping its relative path
+backup_path() {
+    mkdir -p "$OLD_DOTFILES/$(dirname "$1")"
+    mv "$HOME/$1" "$OLD_DOTFILES/$1"
+    echo "  backed up ~/$1"
 }
 
-# Clean common conflicts
-backup_if_exists ~/.bash_profile
-backup_if_exists ~/.bashrc
-backup_if_exists ~/.zshrc
-backup_if_exists ~/.gitconfig
-backup_if_exists ~/.tmux.conf
-backup_if_exists ~/.profile
+# Entries stow skips (--ignore below, stow defaults, package .stow-local-ignore)
+stow_ignored() {
+    case "$2" in
+        README.*|LICENSE*|COPYING|.git|.gitignore|.gitmodules|.stow-local-ignore) return 0 ;;
+    esac
+    [ -f "$SCRIPT_DIR/$1/.stow-local-ignore" ] &&
+        printf '%s\n' "$2" | grep -qxEf "$SCRIPT_DIR/$1/.stow-local-ignore"
+}
+
+# Back up everything in $HOME that stow would refuse to overwrite.
+# Recurses only into real directories that both sides have.
+backup_conflicts() {
+    local pkg="$1" rel="$2" src name target
+    for src in "$SCRIPT_DIR/$pkg/$rel".[!.]* "$SCRIPT_DIR/$pkg/$rel"*; do
+        [ -e "$src" ] || continue
+        name="${src##*/}"
+        stow_ignored "$pkg" "$name" && continue
+        target="$HOME/$rel$name"
+        if [ "$target" -ef "$src" ]; then
+            continue  # already linked to this repo
+        elif [ -d "$src" ] && [ -d "$target" ] && [ ! -L "$target" ]; then
+            backup_conflicts "$pkg" "$rel$name/"
+        elif [ -e "$target" ] || [ -L "$target" ]; then
+            backup_path "$rel$name"
+        fi
+    done
+}
+
+# ~/.gitconfig overrides ~/.config/git/config, so move it out of the way
+[ -e "$HOME/.gitconfig" ] && backup_path ".gitconfig"
 mkdir -p ~/.vim/undodir
 
 if [ -d ~/.zprezto/runcoms ]; then
     for f in ~/.zprezto/runcoms/z*; do
-        [ -e "$f" ] && mv "$f" "$OLD_DOTFILES"
+        [ -e "$f" ] && backup_path ".zprezto/runcoms/${f##*/}"
     done
 fi
 
 for program in "${PROGRAMS[@]}"; do
     if [ -d "$program" ]; then
-        stow --ignore="README.*" -v --target="$HOME" "$program"
         echo "Configuring $program"
+        backup_conflicts "$program" ""
+        # keep ~/.ssh a real dir so keys/known_hosts never land in the repo
+        FOLDING=()
+        [ "$program" = "ssh" ] && FOLDING=(--no-folding)
+        stow --ignore="README.*" ${FOLDING[@]+"${FOLDING[@]}"} -v --target="$HOME" "$program"
     fi
 done
 echo "Finished softlinking files!"
+
+###### SSH PERMISSIONS ######
+if [ -d "$HOME/.ssh" ]; then
+    chmod 700 "$HOME/.ssh"
+    for f in "$HOME/.ssh/config" "$HOME/.ssh/config.local"; do
+        [ -f "$f" ] && chmod 600 "$f"
+    done
+    echo "Set permissions on ~/.ssh"
+fi
+
+###### MACHINE-LOCAL CONFIG ######
+# Untracked *.local files hold private hosts/identity; templates sit next to them
+while IFS= read -r example; do
+    local_file="${example%.example}"
+    [ -f "$local_file" ] || echo "  ! missing ${local_file#"$SCRIPT_DIR"/} (copy from ${example#"$SCRIPT_DIR"/} and fill in)"
+done < <(find "$SCRIPT_DIR/ssh" "$SCRIPT_DIR/git" "$SCRIPT_DIR/zsh" -name '*.local.example' -not -path '*/.git/*')
 
 ###### VALIDATION ######
 echo ""
@@ -268,10 +330,4 @@ if [ $FAILED -eq 1 ]; then
     exit 1
 else
     echo "==> All checks passed! Setup complete."
-fi
-
-###### SSH CONFIG CHMOD ######
-if [ -f "$HOME/.ssh/config" ]; then
-    chmod 600 "$HOME/.ssh/config"
-    echo "Set permissions on ~/.ssh/config"
 fi
