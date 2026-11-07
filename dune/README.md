@@ -1,8 +1,40 @@
 # Dune AI Sandbox
 
-An ephemeral, isolated development environment designed for autonomous coding agents and interactive experimentation. It leverages local shallow Git clones and local Docker to let agents execute arbitrary code, manage dependencies, and create rollback checkpoints without exposing your host commit history or risking your host working tree.
+A Docker sandbox for coding agents (pi, Claude Code, antigravity). The agent runs
+arbitrary commands inside a container while you keep control of your git history.
 
-## Architecture Overview
+Two modes:
+
+- **Live (default):** the agent edits your real working tree, which you have open in
+  nvim at the same time. `.git` is mounted read-only, so the agent can read history
+  but cannot commit, branch, stash or install git hooks. You review with `git diff` and commit.
+- **Isolated (`-i`):** the agent works in a throwaway shallow clone and commits there.
+  Its commits come back to the host as branch `dune/agent-latest`. Good for long
+  unattended runs that should not touch your working tree.
+
+## Live Mode
+
+```Plaintext
+Host                                         Container (dune-<project>-agent)
+nvim (you) ──┐                          ┌── agent
+             ▼                          ▼
+        /home/you/proj   ◄── same path, rw ──►   /home/you/proj
+        /home/you/proj/.git ◄── same path, ro ──► /home/you/proj/.git
+```
+
+- **Same files, same time.** Edits show up in nvim on focus/buffer switch (`autoread` + `checktime` in
+  `nvim/.../autocommands.lua`, `focus-events` in `.tmux.conf`). If you have unsaved edits in a file the
+  agent changed, nvim warns (W12) instead of overwriting.
+- **Same path as on the host.** Editable installs (`pip install -e .`) from your host env work in the
+  container, and paths in tracebacks match your machine.
+- **Read-only git.** `git status/diff/log/blame` work; `add/commit/stash/checkout -b/config` fail.
+  For git worktrees the main repo's git dir is mounted read-only.
+- **Your commits stay yours.** Tip: `git add` your own work before handing a task over; `git diff` then shows only the agent's changes.
+- **Ownership check.** Root in the container must map to your user: true for rootless Docker on Linux
+  and Colima on macOS. With rootful Docker, `dune mentat` refuses to start (override: `DUNE_ALLOW_ROOTFUL=1`).
+- Outside a git repo, live mode mounts the current folder with no history to fall back on.
+
+## Isolated Mode (`dune mentat -i`)
 
 ```Plaintext
 Host Repository (HEAD)
@@ -10,40 +42,37 @@ Host Repository (HEAD)
        ▼ (Ephemeral shallow clone: git clone --depth 1, remotes stripped)
 ~/.cache/dune-clones/<project>-<timestamp>/  ◄── Symlink: <project>-active
        │
-       ▼ (Bind mount)
-Container Workspace (/workspace)
-       │  - Agent runs commands, installs packages, makes commits
+       ▼ (Bind mount, same path)
+Container: agent runs commands, installs packages, makes commits
        │
        ├─► Mid-flight: `dune spice` pulls active commits (to dune/agent-latest) to host anytime
        │
        ▼ (User exits container: exit / Ctrl+D)
-Host Git Object Store
-       │
-       ▼ (git fetch ... HEAD:dune/agent-latest --force)
-Host Branch: dune/agent-latest (Ready for review/merge)
+Host Branch: dune/agent-latest (git fetch ... HEAD:dune/agent-latest --force)
 ```
 
-## Key Features
+- Clones strictly at HEAD with `--depth 1` and removes the origin remote: the agent cannot see past history or push.
+- Uncommitted host edits and gitignored files are not in the clone.
+- On exit, uncommitted work is auto-committed and fetched to `dune/agent-latest`; the clone and the active symlink are deleted.
 
-- Complete History Isolation: Clones strictly at HEAD with `--depth 1` and removes the origin remote. The agent cannot inspect past repository history or push to remotes.
-- Continuous Checkpoints: The agent can commit freely to Git. Commits remain isolated within the container until synced or reviewed. On exit, uncommitted work is auto-committed as a snapshot before syncing.
-- Mid-Flight Syncing: A stable symlink (`~/.cache/dune-clones/<project>-active`) allows `dune spice` to pull commits into the host branch while the container is still running.
-- Single Review Reference: Upon sync or exit, commits are fetched to a single host branch pointer: `dune/agent-latest`.
-- Clean Host State: The ephemeral directory and active symlink in `~/.cache/dune-clones/` are automatically deleted via an exit trap. Your active host working tree remains completely untouched.
-- AI-Ready Base Image: The Docker image preinstalls the pi coding agent, Neovim (via your dotfiles), git, fzf, ripgrep, Node 22, and graphify.
-- Identical Python via Conda Passthrough: When a Conda env is active on the host, `dune mentat` mounts it at the same path (read-only) and prepends it to the container's `PATH`. The container then runs the exact same Python interpreter and packages as the host. Requires Conda on the host — without an active Conda env, the container falls back to the base image's Python.
-- Persistent Cache Mounts: Dedicated bind mounts for pip and Neovim state keep build artifacts across multiple invocations (`dune/data/`).
-- Plannotator Support: A free host port in 19400–19600 is auto-assigned per session and forwarded into the container (`PLANNOTATOR_REMOTE=1`).
+## Shared Features
+
+- AI-Ready Base Image: pi, Claude Code and antigravity, Neovim (via your dotfiles), git, fzf, ripgrep, Node 22.
+- Identical Python via Conda Passthrough: the active host Conda env is mounted read-only at the same path and prepended to `PATH` (Linux hosts; see below).
+- Persistent Cache Mounts: pip and Neovim state are kept across sessions in `dune/data/`.
+- `$DUNE_MODE` (`live` / `isolated`) is set in the container; the agent instructions in `config/pi/agent/AGENTS.md` use it.
 
 ## Commands
 
 ```Plaintext
-dune mentat [-p <python_version>] [-r]   Launch isolated AI sandbox (shallow clone + dev container)
+dune mentat [-i] [-p <python_version>] [-r]
+                                     Launch the AI sandbox on the current project (live mode)
+    -i, --isolated                Shallow clone instead; agent commits go to dune/agent-latest
     -p, --py, --python <version>  Specify Python version (default: auto-detected from the active
                                   host Conda env, otherwise 3.10)
     -r, --rebuild                 Force clean image rebuild (--no-cache)
 
-dune spice                           Fetch in-flight commits from active sandbox to dune/agent-latest
+dune spice                           (isolated mode) Fetch in-flight commits to dune/agent-latest
 
 dune ghola <template> [session_name] [conda_env]
                                      Resurrect workspace layout (editor/git/explorer) via tmuxinator
@@ -55,7 +84,7 @@ dune ghola -k [session_name]         Kill the tmux session for this project
 Container environment is assembled in layers (later files override earlier ones):
 
 1. `sandboxes/mentat/.env` — global sandbox defaults (copy from `.env.example`, e.g. `KISSKI_API_KEY`)
-2. Project `.env` — injected from the repo root if present
+2. Project `.env` — the `.env` in the folder you start `dune mentat` from (in isolated mode also copied into the clone, gitignored there)
 
 Additionally, a `DUNE_DATA_MOUNTS` variable in either `.env` adds extra bind mounts at runtime, comma-separated. Entries without a `:mode` suffix default to `:ro`, and entries with a single path are mapped to the same path inside the container.
 
@@ -76,17 +105,17 @@ Result: `python`/`python3` in the container resolves to the host env's interpret
 The sandbox does **not** auto-install project dependencies. The Python available in the container is:
 
 1. The active host Conda env, when launched with one — see [Conda Environment Passthrough](#conda-environment-passthrough). It already carries every third-party package you use on the host.
-2. Otherwise the base image's Python, which preinstalls `black`, `pip-tools`, `ipython`, and `graphify`. Install whatever you need manually inside the container.
+2. Otherwise the base image's Python, which preinstalls `black`, `pip-tools` and `ipython`. Install whatever you need manually inside the container.
 
 ### Making the project itself importable
 
-If you develop the project on the host with `pip install -e .`, the editable install is only a pointer into the *host's* project path. That path does not exist in the container, and the read-only Conda mount means the env cannot be reinstalled there — so the project's own code is not importable as-is. Set `PYTHONPATH` to the project root (or its `src/` directory; the clone is mounted at `/workspace`):
+- **Live mode:** nothing to do. The project is mounted at the same path as on the host, so an editable
+  install (`pip install -e .`) in the host env points at the right place.
+- **Isolated mode:** the clone lives at a different path, so set `PYTHONPATH` to the clone root (or its `src/`):
 
 ```bash
-export PYTHONPATH=/workspace          # or /workspace/src for src-layout projects
+export PYTHONPATH=$PWD          # or $PWD/src for src-layout projects
 ```
-
-Add this to your shell rc or export it before the command that needs it.
 
 To add packages that are missing from the env without touching the host env (the mount is read-only), install into the container's user site:
 
@@ -107,7 +136,7 @@ dotfiles/dune/
 │   └── mentat/
 │       ├── .env              # Global default sandbox environment (gitignored, copy .env.example)
 │       ├── .env.example      # Template with KISSKI_API_KEY
-│       ├── Dockerfile.mentat # Runtime image definition (pi agent, dotfiles, graphify)
+│       ├── Dockerfile.mentat # Runtime image definition (agents, dotfiles, tools)
 │       ├── docker-compose.yml# Container run configuration
 │       └── config/pi/        # Pi agent configuration mounted into the container
 └── data/                     # Host-cached runtime state (gitignored)

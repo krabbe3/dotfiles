@@ -11,7 +11,8 @@ PROJECT_NAME="$(basename "$GIT_ROOT")"
 ACTIVE_SYMLINK="${DUNE_CLONE_DIR:-$HOME/.cache/dune-clones}/${PROJECT_NAME}-active"
 
 if [ ! -L "$ACTIVE_SYMLINK" ]; then
-  echo "No active Dune sandbox found for $PROJECT_NAME."
+  echo "No active isolated Dune sandbox found for $PROJECT_NAME."
+  echo "(In live mode there is nothing to sync: the agent edits your files directly.)"
   exit 1
 fi
 

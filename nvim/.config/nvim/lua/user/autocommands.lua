@@ -20,3 +20,19 @@ vim.api.nvim_create_autocmd("BufWritePost", {
     end,
     desc = "Applies Black Python formatting after saving",
 })
+
+-- reload buffers changed on disk by other programs (e.g. a dune agent editing
+-- the same files); unsaved buffers get a warning instead of a silent reload.
+-- Throttled to once per second because updatetime is low.
+local last_checktime = 0
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI", "TermLeave" }, {
+    callback = function()
+        local now = vim.uv.now()
+        if now - last_checktime < 1000 or vim.fn.getcmdwintype() ~= "" then
+            return
+        end
+        last_checktime = now
+        vim.cmd("checktime")
+    end,
+    desc = "Reload buffers changed outside nvim",
+})

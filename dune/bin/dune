@@ -15,11 +15,13 @@ usage() {
 Usage: dune <command> [options]
 
 Available commands:
-  mentat       Launch isolated AI sandbox (shallow clone + dev container)
+  mentat       Launch AI sandbox on the current project
+               Default (live): agent edits your files directly, .git is read-only
                Options:
-                 -p, --py, --python <version>   Specify Python version (default: 3.10)
+                 -i, --isolated                 Shallow clone instead; agent commits go to dune/agent-latest
+                 -p, --py, --python <version>   Python version (default: active Conda env, else 3.10)
                  -r, --rebuild                  Force clean rebuild (--no-cache)
-  spice        Fetch in-flight commits from active sandbox to dune/agent-latest (spice must flow continuously)
+  spice        (isolated mode) Fetch in-flight commits from the sandbox to dune/agent-latest
   ghola        Resurrect workspace layout (editor/git/explorer) via tmuxinator
                Usage:
                  dune ghola <template> [session_name] [conda_env]

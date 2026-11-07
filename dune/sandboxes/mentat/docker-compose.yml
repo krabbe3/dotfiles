@@ -9,10 +9,9 @@ services:
       args:
         PYTHON_VERSION: ${PYTHON_VERSION:-3.10}
     user: "0:0"
-    working_dir: /workspace/${PROJECT_NAME:?PROJECT_NAME not set}
+    # project mount (same path as on the host) and working dir are added by
+    # bin/dune-mentat: live mode = real repo rw + .git ro, isolated = clone
     volumes:
-      - ${TARGET_PROJECT}:/workspace/${PROJECT_NAME}:rw
-
       # Persistent caches and Neovim states (stored in dune/data/)
       - ../../data/nvim/share:/root/.local/share/nvim:rw
       - ../../data/nvim/state:/root/.local/state/nvim:rw
@@ -45,7 +44,7 @@ services:
     stdin_open: true
     tty: true
     env_file:
-      # 1. Base AI sandbox defaults / API keys in sandboxes/ai/.env
+      # 1. Base AI sandbox defaults / API keys in sandboxes/mentat/.env
       - path: .env
         required: false
       # 2. Project-level .env overrides

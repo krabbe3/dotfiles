@@ -1,15 +1,34 @@
-# Globel Pi Instructions
+# Global Pi Instructions
 
-- Root is `/workspace/${PROJECT_NAME}`. Do not traverse outside it.
+- Root is the current working directory (the project root or a subfolder of it). Do not traverse outside the project.
 - Check the project-root AGENTS.md for stack-specific rules.
-- Git Workflow
-  - USE `git status` and `git diff` frequently to inspect and self-review your edits.
-  - COMMIT logical progress incrementally with concise messages (`git add <files>`, `git commit -m "..."`).
-  - NEVER run destructive commands: no `git reset --hard`, `git checkout --`, `git clean -fd`, or push without user permission
-  - ALWAYS run `git commit` after you finished changes.
 - Run unit tests and linters before declaring a task done.
-- Dune Sandbox (docker container, hostnames start with `dune-`)
-  - When running inside a dune-mentat sandbox, `python`/`python3` is the host's active Conda env, mounted read-only at the same path — identical interpreter and packages to the host.
-  - Plain `pip install <pkg>` fails (read-only env). Use `pip install --user <pkg>` (session-local, lost at exit) or `python -m venv [--system-site-packages] /tmp/venv` for multiple packages.
-  - The project's own code is NOT importable via the host's `pip install -e .` (that pointer references a host-only path). Set `PYTHONPATH=/workspace` (or the src dir) instead.
-  - State to the user explicitly which python packages you have installed, so he can do it outside of the container
+- NEVER run destructive commands (`rm -rf` on project dirs, `git reset --hard`, `git checkout --`, `git clean -fd`) without user permission.
+
+## Dune Sandbox (docker container, hostnames start with `dune-`)
+
+Check `$DUNE_MODE` to see how git works in this session.
+
+### `DUNE_MODE=live` (default)
+
+- You edit the user's real working tree. The user works on the same files at the same time in their editor.
+  - Before editing a file, re-read it: it may have changed since you last looked.
+  - Keep edits focused; do not reformat or rewrite files you were not asked to touch.
+- `.git` is read-only. `git status`, `git diff`, `git log` and `git blame` work.
+- `git add`, `git commit`, `git stash`, branching and git config fail. Do not try them or work around them. The user reviews and commits.
+- When you finish a task, list the files you changed and summarize what changed in each.
+
+### `DUNE_MODE=isolated`
+
+- You work in a throwaway shallow clone. The user sees your work only through commits.
+- Use `git status` and `git diff` frequently to self-review your edits.
+- Commit logical progress incrementally with concise messages (`git add <files>`, `git commit -m "..."`). Always commit when you finish.
+- Never push.
+
+### Python
+
+- `python`/`python3` is the host's active Conda env, mounted read-only at the same path: identical interpreter and packages to the host.
+- Plain `pip install <pkg>` fails (read-only env). Use `pip install --user <pkg>` (session-local, lost at exit) or `python -m venv --system-site-packages /tmp/venv` for several packages.
+- Live mode: the project is mounted at the same path as on the host, so the host's editable install (`pip install -e .`) works as-is.
+- Isolated mode: the clone lives at a different path, so set `PYTHONPATH` to the project root (or its `src/`) to import the project's own code.
+- Tell the user explicitly which Python packages you installed, so they can install them outside the container.

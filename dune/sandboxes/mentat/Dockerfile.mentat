@@ -38,8 +38,8 @@ RUN curl -fsSL https://antigravity.google/cli/install.sh | bash
 RUN chsh -s /bin/zsh root
 
 # Configure Git safe directories & default sandbox agent identity
-RUN git config --global --add safe.directory /workspace \
-    && git config --global --add safe.directory /root/dotfiles \
+# projects are mounted at their host path, so trust every directory
+RUN git config --global --add safe.directory '*' \
     && git config --global user.name "Dune Agent" \
     && git config --global user.email "agent@dune.local"
 

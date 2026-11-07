@@ -11,12 +11,13 @@ done
 DUNE_DIR="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
 SANDBOX_DIR="$DUNE_DIR/sandboxes/mentat"
 
-TARGET_DIR="$(pwd)"
+TARGET_DIR="$(pwd -P)"
 PROJECT_NAME="$(basename "$TARGET_DIR")"
 
-# 2. Parse flags: --py <ver> and --rebuild
+# 2. Parse flags: --py <ver>, --rebuild, --isolated
 SELECTED_PY=""
 FORCE_REBUILD=false
+ISOLATED=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -26,6 +27,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -r|--rebuild)
       FORCE_REBUILD=true
+      shift
+      ;;
+    -i|--isolated)
+      ISOLATED=true
       shift
       ;;
     *)
@@ -46,11 +51,32 @@ fi
 export PYTHON_VERSION="${SELECTED_PY:-3.10}"
 echo "==> Runtime: Python $PYTHON_VERSION"
 
-# 3. Isolation: Ephemeral Shallow Clone (Hides History, Allows Commits)
+# 3. File ownership: root in the container must map to the host user.
+#    True for rootless Docker and for Colima on macOS; rootful Docker on Linux
+#    would leave root-owned files in the project.
+DOCKER_SECOPTS="$(docker info --format '{{.SecurityOptions}}' 2>/dev/null || true)"
+if [[ "$OSTYPE" == "linux"* && -n "$DOCKER_SECOPTS" && "$DOCKER_SECOPTS" != *rootless* ]]; then
+  if [[ "${DUNE_ALLOW_ROOTFUL:-0}" != 1 ]]; then
+    echo "Error: Docker is not running rootless. The agent would create root-owned files in your project." >&2
+    echo "       Use rootless Docker (DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock)," >&2
+    echo "       or set DUNE_ALLOW_ROOTFUL=1 to continue anyway." >&2
+    exit 1
+  fi
+  echo "==> Warning: rootful Docker, files created by the agent will be owned by root."
+fi
+
+# 4. Workspace: live (default) or isolated shallow clone
+EXTRA_VOLUMES=()
+IS_GIT=false
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   IS_GIT=true
   GIT_ROOT="$(git rev-parse --show-toplevel)"
   PROJECT_NAME="$(basename "$GIT_ROOT")"
+fi
+
+if [[ "$ISOLATED" = true && "$IS_GIT" = true ]]; then
+  # Ephemeral shallow clone: agent may commit freely, results land on dune/agent-latest
+  DUNE_MODE="isolated"
   TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
   BRANCH_NAME="dune/agent-latest"
   CLONE_BASE_DIR="${DUNE_CLONE_DIR:-$HOME/.cache/dune-clones}"
@@ -63,7 +89,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 
   mkdir -p "$CLONE_BASE_DIR"
 
-  echo "==> Git repo detected at: $GIT_ROOT"
+  echo "==> Mode: isolated (shallow clone, commits go to $BRANCH_NAME)"
   echo "==> Creating isolated shallow clone at: $CLONE_DIR"
 
   git clone --depth 1 "file://$GIT_ROOT" "$CLONE_DIR" >/dev/null 2>&1
@@ -72,9 +98,12 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   # Maintain a stable active symlink for live syncing from host
   ln -sfn "$CLONE_DIR" "$ACTIVE_SYMLINK"
 
-  RUN_DIR="$CLONE_DIR"
+  # Same subdirectory inside the clone as where dune was started
+  REL_DIR="${TARGET_DIR#"$GIT_ROOT"}"
+  WORK_DIR="$CLONE_DIR$REL_DIR"
+  EXTRA_VOLUMES+=(-v "$CLONE_DIR:$CLONE_DIR:rw")
 
-  # 4. Handle .env files
+  # Handle .env files
   if [[ -f "$TARGET_DIR/.env" ]]; then
     echo "==> Detected project .env: injecting into sandbox"
     export PROJECT_ENV_FILE="$TARGET_DIR/.env"
@@ -125,20 +154,35 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   }
   trap cleanup EXIT INT TERM
 else
-  IS_GIT=false
-  RUN_DIR="$TARGET_DIR"
+  # Live: the real project, mounted at the same path as on the host.
+  # The agent edits your files directly; .git is read-only, so it can read
+  # history (status/diff/log/blame) but cannot commit, branch, stash or add hooks.
+  DUNE_MODE="live"
+  if [[ "$ISOLATED" = true ]]; then
+    echo "==> Warning: --isolated needs a git repo, falling back to live mode."
+  fi
+
+  if [[ "$IS_GIT" = true ]]; then
+    MOUNT_ROOT="$GIT_ROOT"
+    # Common git dir covers .git and, for linked worktrees, the main repo's .git
+    GIT_COMMON_DIR="$(cd "$(git rev-parse --git-common-dir)" && pwd -P)"
+    EXTRA_VOLUMES+=(-v "$MOUNT_ROOT:$MOUNT_ROOT:rw" -v "$GIT_COMMON_DIR:$GIT_COMMON_DIR:ro")
+    echo "==> Mode: live (editing $MOUNT_ROOT directly, .git read-only)"
+  else
+    MOUNT_ROOT="$TARGET_DIR"
+    EXTRA_VOLUMES+=(-v "$MOUNT_ROOT:$MOUNT_ROOT:rw")
+    echo "==> Mode: live, no git repo: edits go to $MOUNT_ROOT with no history to fall back on"
+  fi
+  WORK_DIR="$TARGET_DIR"
 
   if [[ -f "$TARGET_DIR/.env" ]]; then
     export PROJECT_ENV_FILE="$TARGET_DIR/.env"
-  elif [[ -f "$SANDBOX_DIR/.env" ]]; then
-    export PROJECT_ENV_FILE="$SANDBOX_DIR/.env"
   else
     export PROJECT_ENV_FILE="/dev/null"
   fi
 fi
 
 # 5. Dynamic Data Mounts via DUNE_DATA_MOUNTS
-EXTRA_VOLUMES=()
 PROJECT_DATA_MOUNTS=""
 
 if [[ -f "$TARGET_DIR/.env" ]]; then
@@ -172,10 +216,9 @@ if [[ -n "${CONDA_PREFIX:-}" && -d "$CONDA_PREFIX" ]]; then
   CONTAINER_CONDA_PATH="$CONDA_PREFIX/bin"
 fi
 
-# Container-side project name: stable and safe for paths and docker names
+# Container-side project name: stable and safe for docker names
 PROJECT_NAME="$(printf '%s' "$PROJECT_NAME" | tr -cs 'A-Za-z0-9_-' '-' | sed 's/^-*//; s/-*$//')"
 export PROJECT_NAME
-export TARGET_PROJECT="$RUN_DIR"
 export SANDBOX_NAME="${PROJECT_NAME}-agent"
 
 cd "$SANDBOX_DIR"
@@ -184,7 +227,7 @@ mkdir -p "$DUNE_DIR/data/pip-cache" \
          "$DUNE_DIR/data/nvim/share" \
          "$DUNE_DIR/data/nvim/state"
 
-# 8. Build Python image on demand or on forced rebuild
+# 7. Build Python image on demand or on forced rebuild
 if [ "$FORCE_REBUILD" = true ]; then
   echo "==> Rebuild requested. Building dune-python:${PYTHON_VERSION} (clean)..."
   DOCKER_BUILDKIT=1 docker compose build --no-cache dev
@@ -193,14 +236,18 @@ elif ! docker image inspect "dune-python:${PYTHON_VERSION}" >/dev/null 2>&1; the
   DOCKER_BUILDKIT=1 docker compose build dev
 fi
 
-echo "==> Spawning Dune sandbox for: $RUN_DIR"
-if [ "${IS_GIT:-false}" = true ]; then
+echo "==> Spawning Dune sandbox in: $WORK_DIR"
+if [ "$DUNE_MODE" = isolated ]; then
   echo "==> Live sync available from another terminal:"
   echo "    dune spice"
 fi
 
-# 9. Launch container, prioritize Conda binaries, then start interactive zsh
-DOCKER_BUILDKIT=1 docker compose run "${EXTRA_VOLUMES[@]}" --service-ports --rm dev /bin/zsh -c '
+# 8. Launch container, prioritize Conda binaries, then start interactive zsh
+DOCKER_BUILDKIT=1 docker compose run "${EXTRA_VOLUMES[@]}" -w "$WORK_DIR" -e DUNE_MODE="$DUNE_MODE" \
+  --service-ports --rm dev /bin/zsh -c '
+  # project is mounted at its host path, which git would otherwise call dubious
+  git config --global --add safe.directory "*"
+
   # Conda-Binaries im Container aktivieren falls übergeben
   if [ -n "'"$CONTAINER_CONDA_PATH"'" ] && [ -d "'"$CONTAINER_CONDA_PATH"'" ]; then
     export PATH="'"$CONTAINER_CONDA_PATH"':$PATH"
