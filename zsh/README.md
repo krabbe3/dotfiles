@@ -7,9 +7,9 @@ Oh-My-Zsh shell config with a custom `lomo` theme and performance-focused plugin
 ```
 zsh/
 ├── .zshrc                      # Main shell config
-├── .zshrc.local                # Untracked: machine-specific settings (sourced last)
+├── .zshrc.local                # Untracked: machine-specific settings (sourced last, optional)
 ├── .zshrc.local.example        # Template for .zshrc.local
-├── .stow-local-ignore          # Per-host overrides
+├── .stow-local-ignore          # Keeps custom/ from being stowed
 ├── .oh-my-zsh/                 # Submodule — Oh-My-Zsh framework
 └── custom/
     ├── themes/
@@ -26,8 +26,9 @@ zsh/
 | Shell | `/bin/zsh` |
 | Plugins | git, conda-env, zsh-autosuggestions, fzf-zsh-plugin, fast-syntax-highlighting |
 | Autosuggest | History + completion strategy, accept with `C-y` |
-| Docker | `DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock` |
-| Conda | Miniforge at `~/.miniforge3`, auto-activate `base`, suppress prompt prefix |
+| Docker | `DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock`, only if that socket exists |
+| X11 | `DISPLAY=:0` on macOS (XQuartz) when not already set |
+| Conda | Miniforge at `~/miniforge3`, auto-activate `base`, suppress prompt prefix |
 
 ## Custom Theme (`lomo`)
 
@@ -47,8 +48,20 @@ Two-line prompt using box-drawing chars:
 
 | Alias | Command |
 |-------|---------|
-| `kssh` | `kitty +kitten ssh -L 8988:localhost:8988` — Kitty SSH with matplotlib port forward |
-| `aivim` | Docker Compose AI sandbox launcher |
+| `kssh` | `kitty +kitten ssh -Y` — Kitty SSH with trusted X11 forwarding |
+| `lichtblick` | Runs the Lichtblick ROS visualizer in Docker on port 8080 |
+
+## Machine-Specific Settings
+
+`.zshrc` ends with `[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local`. Put settings that
+only apply to one machine there, e.g. the HPC ROS tools `PATH`:
+
+```bash
+export PATH="/scratch/<user>/<project>/script:$PATH"
+```
+
+`setup_local.sh` creates it only where `/scratch/<user>` exists. On a Mac it is not
+needed; `touch zsh/.zshrc.local && stow -R -t ~ zsh` silences the setup notice.
 
 ## Transcriber Integration
 

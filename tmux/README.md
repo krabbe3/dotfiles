@@ -14,7 +14,7 @@ tmux/
 
 ## Prefix
 
-`Ctrl+Space` (remapped from default `Ctrl+b`)
+`Ctrl+s` (remapped from default `Ctrl+b`)
 
 ## Keybindings
 

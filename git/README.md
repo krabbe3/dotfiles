@@ -13,7 +13,9 @@ git/
     └── hooks/                 # Custom git hooks (core.hooksPath)
 ```
 
-On a new machine: `cp git/.config/git/config.local.example git/.config/git/config.local` and fill in your name/email.
+On a new machine `setup_local.sh` (run by `setup_full.sh`) creates `config.local`. Without it: `cp git/.config/git/config.local.example git/.config/git/config.local` and fill in your name/email. `~/.config/git` is a symlink to the whole folder, so the file takes effect immediately.
+
+`setup_full.sh` moves an existing `~/.gitconfig` to `backups/`, because it would override these settings.
 
 ## Config
 
