@@ -1,0 +1,6 @@
+# Copy to config.local (untracked) and fill in real values.
+[user]
+	email = <you@example.com>
+	name = <Your Name>
+[url "git@<gitlab-host>:"]
+	insteadOf = https://<gitlab-host>/

@@ -1,0 +1,2 @@
+# Copy to .zshrc.local (untracked) for machine-specific settings, e.g.:
+# export PATH="/scratch/<user>/<project>/script:$PATH"

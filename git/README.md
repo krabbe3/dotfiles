@@ -1,34 +1,36 @@
 # Git
 
-Git configuration with TU Ilmenau integration.
+Git configuration with a private, untracked identity file.
 
 ## Structure
 
 ```
 git/
-├── .gitconfig          # Main git config
-└── hooks/              # Custom git hooks (path: /home/lomo3746/.config/git/hooks)
+└── .config/git/
+    ├── config                 # Tracked: shared settings
+    ├── config.local           # Untracked: [user] + host-specific url rewrites
+    ├── config.local.example   # Template for config.local
+    └── hooks/                 # Custom git hooks (core.hooksPath)
 ```
+
+On a new machine: `cp git/.config/git/config.local.example git/.config/git/config.local` and fill in your name/email.
 
 ## Config
 
 ```ini
-[user]
-    email = lorenz.mohr@tu-ilmenau.de
-    name = Lorenz Mohr
+[include]
+    path = ~/.config/git/config.local
 [push]
     autoSetupRemote = true
 [pull]
     rebase = true
-[url "git@gitlab.tu-ilmenau.de:"]
-    insteadOf = https://gitlab.tu-ilmenau.de/
 [core]
-    hooksPath = /home/lomo3746/.config/git/hooks
+    hooksPath = ~/.config/git/hooks
 ```
 
 ## Key Settings
 
 - **Pull rebase**: `git pull` defaults to rebase (cleaner history)
 - **Auto-setup remote**: New branches auto-track on push
-- **GitLab redirect**: `https://gitlab.tu-ilmenau.de/` URLs rewrite to `git@gitlab.tu-ilmenau.de:` (SSH)
-- **Custom hooks**: Hooks loaded from `/home/lomo3746/.config/git/hooks`
+- **GitLab redirect** (in `config.local`): `https://<gitlab-host>/` URLs rewrite to SSH
+- **Custom hooks**: Hooks loaded from `~/.config/git/hooks` (note: this disables per-repo `.git/hooks`)

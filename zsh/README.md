@@ -7,6 +7,8 @@ Oh-My-Zsh shell config with a custom `lomo` theme and performance-focused plugin
 ```
 zsh/
 ├── .zshrc                      # Main shell config
+├── .zshrc.local                # Untracked: machine-specific settings (sourced last)
+├── .zshrc.local.example        # Template for .zshrc.local
 ├── .stow-local-ignore          # Per-host overrides
 ├── .oh-my-zsh/                 # Submodule — Oh-My-Zsh framework
 └── custom/
