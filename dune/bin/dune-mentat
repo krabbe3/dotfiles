@@ -39,16 +39,28 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Auto-detect Python version from active Conda environment if not explicitly set via flag
-if [[ -z "$SELECTED_PY" && -n "${CONDA_PREFIX:-}" ]]; then
-  DETECTED_PY="$("$CONDA_PREFIX/bin/python" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || true)"
-  if [[ -n "$DETECTED_PY" ]]; then
-    echo "==> Detected active Conda env (${CONDA_DEFAULT_ENV:-custom}) with Python $DETECTED_PY"
-    SELECTED_PY="$DETECTED_PY"
+# Active host Python env: a venv wins over the Conda env it may be built on
+HOST_ENV="${VIRTUAL_ENV:-${CONDA_PREFIX:-}}"
+HOST_ENV_PY=""
+ENV_VER="" ENV_PREFIX="" ENV_BASE="" ENV_SITE=""
+if [[ -n "$HOST_ENV" && -x "$HOST_ENV/bin/python" ]]; then
+  HOST_ENV_PY="$HOST_ENV/bin/python"
+  # version, prefix, base prefix, site-packages dirs (one per line)
+  ENV_INFO="$("$HOST_ENV_PY" -c '
+import sys, sysconfig
+print("%d.%d" % sys.version_info[:2]); print(sys.prefix); print(sys.base_prefix)
+print(":".join(dict.fromkeys([sysconfig.get_path("purelib"), sysconfig.get_path("platlib")])))
+' 2>/dev/null || true)"
+  if [[ -n "$ENV_INFO" ]]; then
+    { read -r ENV_VER; read -r ENV_PREFIX; read -r ENV_BASE; read -r ENV_SITE; } <<< "$ENV_INFO"
+    echo "==> Detected active Python env: $HOST_ENV (Python $ENV_VER)"
+  else
+    HOST_ENV_PY=""
   fi
 fi
 
-export PYTHON_VERSION="${SELECTED_PY:-3.10}"
+# Python version of the image: -p, else the host env's, else 3.10
+export PYTHON_VERSION="${SELECTED_PY:-${ENV_VER:-3.10}}"
 echo "==> Runtime: Python $PYTHON_VERSION"
 
 # 3. File ownership: root in the container must map to the host user.
@@ -178,13 +190,19 @@ else
   # Host-side snapshots: at start, every few minutes while files change, at exit
   if [[ "$IS_GIT" = true ]]; then
     SNAP="$DUNE_DIR/bin/dune-snap"
-    (cd "$GIT_ROOT" && "$SNAP" snap -f -q -m "session start")
+    (cd "$GIT_ROOT" && "$SNAP" snap -f -q -m "session start") ||
+      echo "==> Warning: could not take the session-start snapshot"
     (
+      # kill the running sleep too, so nothing lingers after the session
+      trap 'kill "$SLEEP_PID" 2>/dev/null; exit 0' TERM
       cd "$GIT_ROOT"
-      while sleep "${DUNE_SNAP_INTERVAL:-180}"; do
-        "$SNAP" snap -q -m "auto" >/dev/null 2>&1 || true
+      while true; do
+        sleep "${DUNE_SNAP_INTERVAL:-180}" &
+        SLEEP_PID=$!
+        wait "$SLEEP_PID"
+        "$SNAP" snap -q -m "auto" || true
       done
-    ) &
+    ) >/dev/null 2>&1 &
     SNAP_LOOP_PID=$!
 
     live_cleanup() {
@@ -230,12 +248,41 @@ if [[ -n "$PROJECT_DATA_MOUNTS" ]]; then
   done
 fi
 
-# 6. Active Host Conda Environment Direct Passthrough
-CONTAINER_CONDA_PATH=""
-if [[ -n "${CONDA_PREFIX:-}" && -d "$CONDA_PREFIX" ]]; then
-  echo "==> Passing active host Conda env (${CONDA_DEFAULT_ENV:-custom}): $CONDA_PREFIX"
-  EXTRA_VOLUMES+=(-v "$CONDA_PREFIX:$CONDA_PREFIX:ro")
-  CONTAINER_CONDA_PATH="$CONDA_PREFIX/bin"
+# 6. Host Python env passthrough (Linux hosts): mounted read-only at the same
+#    path; entrypoint.sh adds a session venv on top for the agent's installs
+PY_ENV=(-e DUNE_PY_MODE=image)
+if [[ -n "$HOST_ENV_PY" ]]; then
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "==> macOS host: $HOST_ENV holds macOS binaries and cannot run in the Linux container."
+    echo "    Using the image's Python $PYTHON_VERSION instead; install what you need with pip (lost at exit)."
+  else
+    EXTRA_VOLUMES+=(-v "$ENV_PREFIX:$ENV_PREFIX:ro")
+    PY_ENV=(-e DUNE_HOST_BIN="$ENV_PREFIX/bin")
+    if [[ "$ENV_PREFIX" == "$ENV_BASE" ]]; then
+      # Conda env (or any full Python install): run its own interpreter
+      PY_ENV+=(-e DUNE_PY_MODE=env -e DUNE_HOST_PY="$HOST_ENV_PY")
+      echo "==> Passing host env read-only: $ENV_PREFIX"
+    else
+      # venv: its packages are added to the session venv via site dirs
+      PY_ENV+=(-e DUNE_HOST_SITE="$ENV_SITE")
+      case "$ENV_BASE" in
+        /|/usr|/usr/local)
+          # system Python base: the container has its own /usr, use the image's
+          # Python of the same version with the venv's packages
+          PY_ENV+=(-e DUNE_PY_MODE=image)
+          if [[ "$PYTHON_VERSION" != "$ENV_VER" ]]; then
+            echo "==> Warning: -p $PYTHON_VERSION differs from the venv's Python $ENV_VER; its compiled packages may not load."
+          fi
+          echo "==> Passing host venv read-only: $ENV_PREFIX (on the image's Python $PYTHON_VERSION)"
+          ;;
+        *)
+          EXTRA_VOLUMES+=(-v "$ENV_BASE:$ENV_BASE:ro")
+          PY_ENV+=(-e DUNE_PY_MODE=env -e DUNE_HOST_PY="$HOST_ENV_PY")
+          echo "==> Passing host venv read-only: $ENV_PREFIX (base Python: $ENV_BASE)"
+          ;;
+      esac
+    fi
+  fi
 fi
 
 # Container-side project name: stable and safe for docker names
@@ -264,17 +311,6 @@ if [ "$DUNE_MODE" = isolated ]; then
   echo "    dune spice"
 fi
 
-# 8. Launch container, prioritize Conda binaries, then start interactive zsh
-DOCKER_BUILDKIT=1 docker compose run "${EXTRA_VOLUMES[@]}" -w "$WORK_DIR" -e DUNE_MODE="$DUNE_MODE" \
-  --service-ports --rm dev /bin/zsh -c '
-  # project is mounted at its host path, which git would otherwise call dubious
-  git config --global --add safe.directory "*"
-
-  # Conda-Binaries im Container aktivieren falls übergeben
-  if [ -n "'"$CONTAINER_CONDA_PATH"'" ] && [ -d "'"$CONTAINER_CONDA_PATH"'" ]; then
-    export PATH="'"$CONTAINER_CONDA_PATH"':$PATH"
-    echo "==> Active environment Python: $(which python3)"
-  fi
-
-  exec /bin/zsh
-'
+# 8. Launch container: entrypoint.sh sets up Python, then starts zsh
+DOCKER_BUILDKIT=1 docker compose run "${EXTRA_VOLUMES[@]}" "${PY_ENV[@]}" -w "$WORK_DIR" -e DUNE_MODE="$DUNE_MODE" \
+  --service-ports --rm dev /bin/bash /opt/dune/entrypoint.sh

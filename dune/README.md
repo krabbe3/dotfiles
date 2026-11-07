@@ -98,7 +98,7 @@ Host Branch: dune/agent-latest (git fetch ... HEAD:dune/agent-latest --force)
 ## Shared Features
 
 - AI-Ready Base Image: pi, Claude Code and antigravity, Neovim (via your dotfiles), git, fzf, ripgrep, Node 22.
-- Identical Python via Conda Passthrough: the active host Conda env is mounted read-only at the same path and prepended to `PATH` (Linux hosts; see below).
+- Same Python as the host: the active Conda env or venv is mounted read-only at the same path, with a session venv on top for the agent's installs (Linux hosts; see below).
 - Persistent Cache Mounts: pip and Neovim state are kept across sessions in `dune/data/`.
 - `$DUNE_MODE` (`live` / `isolated`) is set in the container; the agent instructions in `config/pi/agent/AGENTS.md` use it.
 
@@ -134,21 +134,33 @@ Additionally, a `DUNE_DATA_MOUNTS` variable in either `.env` adds extra bind mou
 
 The compose file also exports a read-only GitLab PAT (`GITLAB_READ_TOKEN` in the sandbox `.env`) for university GitLab, and mounts the pi agent configuration from `sandboxes/mentat/config/pi/` to `/root/.pi` inside the container.
 
-### Conda Environment Passthrough
+### Python Environment Passthrough
 
-If `dune mentat` is started with a host Conda env active (`CONDA_PREFIX` set), that env is passed through to the container:
+If a Python env is active when you start `dune mentat` (`$VIRTUAL_ENV`, else `$CONDA_PREFIX`), the
+sandbox uses it:
 
-1. The env's Python version (major.minor) is used to select the base image `dune-python:<ver>`, unless overridden with `-p`.
-2. `$CONDA_PREFIX` is bind-mounted at the same path, read-only.
-3. `$CONDA_PREFIX/bin` is prepended to `PATH` at container start.
+1. The env's Python version selects the base image `dune-python:<ver>`, unless overridden with `-p`.
+2. The env is bind-mounted read-only at the same path (a venv also gets its base Python mounted).
+3. `sandboxes/mentat/entrypoint.sh` creates a **session venv** on top (`python -m venv --system-site-packages`):
+   - `python`, `pip` resolve to it; all packages of your env are visible, including editable installs.
+   - `pip install` by the agent goes into the session venv. Your host env is never changed.
+   - When the session ends, the session venv is gone and you get a list of what was installed.
+   - The env's own `bin/` comes after it on `PATH`, so its CLI tools work. Those tools use the host
+     interpreter directly; run them as `python -m <tool>` to also see session installs.
 
-Result: `python`/`python3` in the container resolves to the host env's interpreter, and all installed packages are identical to the host — the agent runs in exactly the same Python environment you use on the host. This behavior **requires Conda** (e.g., Miniconda/Miniforge) installed on the host with the env activated before launching `dune mentat`. If no Conda env is active, the container uses the base image's Python (default 3.10, or the `-p` version).
+| Host env | Interpreter in the container |
+|----------|------------------------------|
+| Conda env | the env's own Python |
+| venv on a Conda / pyenv / uv Python | the venv's base Python (mounted), venv packages added |
+| venv on the system Python (`/usr`) | the image's Python of the same version, venv packages added |
+| macOS host (any env) | the image's Python; macOS binaries cannot run in the Linux container |
+| no env | the image's Python (3.10 or `-p`) |
 
 ## Project Dependencies
 
 The sandbox does **not** auto-install project dependencies. The Python available in the container is:
 
-1. The active host Conda env, when launched with one — see [Conda Environment Passthrough](#conda-environment-passthrough). It already carries every third-party package you use on the host.
+1. The active host env, when launched with one — see [Python Environment Passthrough](#python-environment-passthrough). It already carries every third-party package you use on the host.
 2. Otherwise the base image's Python, which preinstalls `black`, `pip-tools` and `ipython`. Install whatever you need manually inside the container.
 
 ### Making the project itself importable
@@ -161,11 +173,7 @@ The sandbox does **not** auto-install project dependencies. The Python available
 export PYTHONPATH=$PWD          # or $PWD/src for src-layout projects
 ```
 
-To add packages that are missing from the env without touching the host env (the mount is read-only), install into the container's user site:
-
-```bash
-pip install --user <package>          # session-local, gone when the container exits
-```
+Packages missing from the env: `pip install <package>` inside the sandbox (session venv, gone at exit; listed when the session ends).
 
 ## Directory Layout
 
@@ -183,6 +191,7 @@ dotfiles/dune/
 │       ├── .env.example      # Template with KISSKI_API_KEY
 │       ├── Dockerfile.mentat # Runtime image definition (agents, dotfiles, tools)
 │       ├── docker-compose.yml# Container run configuration
+│       ├── entrypoint.sh     # Container start: session venv on the host env, then zsh
 │       └── config/pi/        # Pi agent configuration mounted into the container
 └── data/                     # Host-cached runtime state (gitignored)
     ├── pip-cache/

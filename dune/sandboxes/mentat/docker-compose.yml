@@ -17,6 +17,9 @@ services:
       - ../../data/nvim/state:/root/.local/state/nvim:rw
       - ../../data/pip-cache:/root/.cache/pip:rw
 
+      # container start script (Python env setup, then zsh)
+      - ./entrypoint.sh:/opt/dune/entrypoint.sh:ro
+
 
       # agent configurations
       - ./config/pi:/root/.pi:rw

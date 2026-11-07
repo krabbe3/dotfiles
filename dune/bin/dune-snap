@@ -44,6 +44,9 @@ GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
 }
 cd "$GIT_ROOT"
 NS="refs/dune/$(basename "$GIT_ROOT")"
+# snapshots are not real commits: fixed identity, works without user.name/email
+export GIT_AUTHOR_NAME="dune snap" GIT_AUTHOR_EMAIL="dune@localhost"
+export GIT_COMMITTER_NAME="dune snap" GIT_COMMITTER_EMAIL="dune@localhost"
 KEEP="${DUNE_SNAP_KEEP:-50}"
 KEEP_DAYS="${DUNE_SNAP_DAYS:-7}"
 

@@ -27,8 +27,9 @@ Check `$DUNE_MODE` to see how git works in this session.
 
 ### Python
 
-- `python`/`python3` is the host's active Conda env, mounted read-only at the same path: identical interpreter and packages to the host.
-- Plain `pip install <pkg>` fails (read-only env). Use `pip install --user <pkg>` (session-local, lost at exit) or `python -m venv --system-site-packages /tmp/venv` for several packages.
+- `python`/`pip` come from a session venv built on the host's active env (Conda env or venv), which is mounted read-only at the same path: same interpreter and packages as on the host.
+- `pip install <pkg>` works and goes into the session venv; the host env is never changed. Installs are lost when the session ends, and the user sees a list of them at exit.
+- Run tools as modules (`python -m pytest`, `python -m black`): the host env's own scripts (`pytest`, ...) do not see packages you installed in the session.
 - Live mode: the project is mounted at the same path as on the host, so the host's editable install (`pip install -e .`) works as-is.
 - Isolated mode: the clone lives at a different path, so set `PYTHONPATH` to the project root (or its `src/`) to import the project's own code.
-- Tell the user explicitly which Python packages you installed, so they can install them outside the container.
+- Tell the user explicitly which Python packages you installed and why, so they can add them to the host env.
