@@ -140,7 +140,7 @@ dotfiles/
 ├── ssh/                       # SSH config (HPC, Makalu, tunnels)
 ├── scripts/                   # Helper scripts (macOS LaTeX OCR)
 │
-├── dune/                      # Isolated AI sandbox (Docker + shallow clone)
+├── dune/                      # AI agent sandbox (Docker; live or isolated mode)
 ├── transcriber/               # Supernote → Markdown via Ollama vision
 │
 └── backups/                   # Timestamped dotfile backups
@@ -159,7 +159,7 @@ dotfiles/
 | [`git/`](git/README.md) | Git | `.config/git/config` | Pull-rebase, custom hooks; identity + GitLab URL rewrite in `config.local` |
 | [`lazygit/`](lazygit/README.md) | Lazygit | `config.yml` | Git TUI companion |
 | [`ssh/`](ssh/README.md) | SSH | `config` | GitHub over 443; private hosts (HPC, proxy jump, port forwards, LLM tunnel) in `config.local` |
-| [`dune/`](dune/README.md) | Dune Sandbox | Docker + bash | Isolated dev sandbox with shallow clones, live sync, auto-commit on exit |
+| [`dune/`](dune/README.md) | Dune Sandbox | Docker + bash | Agent edits your files live while `.git` stays read-only, host-side snapshots (`dune diff` / `dune undo`), same Python env as the host, optional isolated clone mode |
 | [`transcriber/`](transcriber/README.md) | Supernote Transcriber | Python + Ollama | `.note` → Markdown via `qwen3-vl:8b-instruct` vision model |
 | [`scripts/`](scripts/README.md) | Misc Scripts | Bash | macOS LaTeX OCR (pix2tex) |
 

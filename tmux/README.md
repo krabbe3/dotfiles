@@ -61,6 +61,7 @@ tmux/
 - Mouse enabled (clickable windows/panes, resizeable)
 - Status bar on top, Rose Pine theme (main variant)
 - System clipboard sync (`set-clipboard on`)
+- Focus events passed to apps (`focus-events on`), so nvim reloads files changed outside it when you switch back to its pane
 - No automatic window renaming
 - Default shell: `/bin/zsh`
 

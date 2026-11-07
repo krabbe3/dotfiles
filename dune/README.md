@@ -114,8 +114,8 @@ dune mentat [-i] [-g] [-p <python_version>] [-r] [--rebuild-env]
     -i, --isolated                Shallow clone instead; agent commits go to dune/agent-<time>
     -g, --gitlab                  Give the agent the GitLab token for this session (see below)
     --rebuild-env                 macOS: rebuild the Linux copy of the active env
-    -p, --py, --python <version>  Specify Python version (default: auto-detected from the active
-                                  host Conda env, otherwise 3.10)
+    -p, --py, --python <version>  Specify Python version (default: the active host venv or
+                                  Conda env, otherwise 3.10)
     -r, --rebuild                 Force clean image rebuild (--no-cache)
 
 dune spice                           (isolated mode) Fetch commits of running or kept clones to
@@ -236,13 +236,18 @@ dotfiles/dune/
 ├── sandboxes/
 │   └── mentat/
 │       ├── .env              # Global default sandbox environment (gitignored, copy .env.example)
-│       ├── .env.example      # Template with KISSKI_API_KEY
+│       ├── .env.example      # Template: KISSKI_API_KEY, DUNE_GITLAB_HOST, GITLAB_READ_TOKEN
 │       ├── Dockerfile.mentat # Runtime image definition (agents, dotfiles, tools)
 │       ├── docker-compose.yml# Container run configuration
 │       ├── entrypoint.sh     # Container start: session venv on the host env, then zsh
 │       ├── mirror/           # macOS: export host env, build its Linux copy
-│       └── config/pi/        # Pi agent configuration mounted into the container
+│       └── config/           # Agent configs, mounted read-write (the agent may edit them)
+│           ├── pi/           #   -> /root/.pi      (AGENTS.md, models.json, extensions, ...)
+│           ├── claude/       #   -> /root/.claude
+│           ├── claude.json   #   -> /root/.claude.json (gitignored, created as {} if missing)
+│           └── gemini/       #   -> /root/.gemini  (antigravity)
 └── data/                     # Host-cached runtime state (gitignored)
+    ├── mirror/               # macOS: env export per copy (<volume>.json) and build markers
     ├── pip-cache/
     └── nvim/
         ├── share/
@@ -251,6 +256,16 @@ dotfiles/dune/
 
 ## Installation & Setup
 
-1. Copy `dune/sandboxes/mentat/.env.example` to `dune/sandboxes/mentat/.env` and fill in your API keys.
-2. Add `dune/bin` to your shell's `PATH`.
-3. `dune mentat` will build the Docker image on first use for the selected Python version; pass `-r` to force a clean rebuild.
+1. `setup_full.sh` links `dune/bin/dune` to `~/.local/bin/dune` and creates `sandboxes/mentat/.env`
+   from the template. Fill in `KISSKI_API_KEY`, and for GitLab packages `DUNE_GITLAB_HOST` and
+   `GITLAB_READ_TOKEN` (see [GitLab Token](#gitlab-token---gitlab)).
+2. Docker: Colima on macOS (installed and started by `setup_full.sh`); rootless Docker on Linux
+   (set up separately; `dune mentat` refuses rootful Docker, see Live Mode).
+3. `dune mentat` builds the image on first use for the selected Python version. After pulling changes
+   to `Dockerfile.mentat` (e.g. micromamba for the macOS env copy), run `dune mentat -r` once.
+4. For editing alongside the agent: the nvim reload autocommand and tmux `focus-events` are part of
+   these dotfiles (`nvim/.../autocommands.lua`, `tmux/.tmux.conf`); reload tmux once with `Prefix + r`.
+
+Agent configs under `sandboxes/mentat/config/` are writable by the agent, and some files there are
+tracked (`AGENTS.md`, `settings.json`, `models.json`, `extensions/`, ...). Check
+`git -C ~/dotfiles diff dune/` before committing or pushing, since this repo is public.
