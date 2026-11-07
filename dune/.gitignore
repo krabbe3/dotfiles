@@ -11,3 +11,4 @@ web-search-cache
 **/*.key
 **/web-search.json
 **/history.jsonl
+__pycache__/

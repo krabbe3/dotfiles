@@ -98,17 +98,18 @@ Host Branch: dune/agent-latest (git fetch ... HEAD:dune/agent-latest --force)
 ## Shared Features
 
 - AI-Ready Base Image: pi, Claude Code and antigravity, Neovim (via your dotfiles), git, fzf, ripgrep, Node 22.
-- Same Python as the host: the active Conda env or venv is mounted read-only at the same path, with a session venv on top for the agent's installs (Linux hosts; see below).
+- Same Python as the host: the active Conda env or venv is mounted read-only at the same path (Linux) or rebuilt as a Linux copy (macOS), with a session venv on top for the agent's installs.
 - Persistent Cache Mounts: pip and Neovim state are kept across sessions in `dune/data/`.
 - `$DUNE_MODE` (`live` / `isolated`) is set in the container; the agent instructions in `config/pi/agent/AGENTS.md` use it.
 
 ## Commands
 
 ```Plaintext
-dune mentat [-i] [-g] [-p <python_version>] [-r]
+dune mentat [-i] [-g] [-p <python_version>] [-r] [--rebuild-env]
                                      Launch the AI sandbox on the current project (live mode)
     -i, --isolated                Shallow clone instead; agent commits go to dune/agent-latest
     -g, --gitlab                  Give the agent the GitLab token for this session (see below)
+    --rebuild-env                 macOS: rebuild the Linux copy of the active env
     -p, --py, --python <version>  Specify Python version (default: auto-detected from the active
                                   host Conda env, otherwise 3.10)
     -r, --rebuild                 Force clean image rebuild (--no-cache)
@@ -169,8 +170,34 @@ sandbox uses it:
 | Conda env | the env's own Python |
 | venv on a Conda / pyenv / uv Python | the venv's base Python (mounted), venv packages added |
 | venv on the system Python (`/usr`) | the image's Python of the same version, venv packages added |
-| macOS host (any env) | the image's Python; macOS binaries cannot run in the Linux container |
+| macOS host (Conda env / venv) | a Linux copy of the env, built once per package list (below) |
 | no env | the image's Python (3.10 or `-p`) |
+
+### macOS: Linux Copy Of The Env
+
+A macOS env contains macOS binaries, which cannot run in the Linux container. On a Mac,
+`dune mentat` therefore builds a Linux copy of the active env and uses it like the mounted env on Linux
+(read-only, with the session venv on top):
+
+1. `mirror/export_env.py` runs with the env's Python on the host and records:
+   - conda packages you requested (`conda-meta/history`), pinned to the installed versions
+   - pip packages: PyPI ones as `name==version`, git ones at the installed commit
+   - folders installed with `pip install /path` (copied and installed) and `pip install -e /path`
+     (mounted at the same path and installed editable)
+2. `mirror/build_env.py` builds it with micromamba in the container, into a docker volume named after
+   a hash of that list. Conda packages that do not exist for Linux fall back to the latest version or
+   are dropped; failing pip packages are skipped. Each is reported at the end of the build.
+3. The next `dune mentat` with the same package list starts right away. When the list changes (you
+   install or update something), a new copy is built and the old volume is removed.
+
+- The first build of an env takes a few minutes; conda packages are cached in the `dune-mamba-pkgs` volume.
+- GitLab packages are installed with `GITLAB_READ_TOKEN` during the build, without `--gitlab`: the
+  agent is not running then and never sees the token.
+- `--rebuild-env` forces a rebuild (e.g. after changing code in a folder installed with `pip install /path`).
+- macOS-only packages (`pyobjc*`, `appnope`, `mlx*`, ...) are skipped.
+- The copy is re-solved for Linux, so it can differ in details; on Apple Silicon it is a `linux-aarch64`
+  env, where a few conda-forge packages are missing.
+- Needs an image with micromamba: run `dune mentat -r` once after updating.
 
 ## Project Dependencies
 
@@ -208,6 +235,7 @@ dotfiles/dune/
 │       ├── Dockerfile.mentat # Runtime image definition (agents, dotfiles, tools)
 │       ├── docker-compose.yml# Container run configuration
 │       ├── entrypoint.sh     # Container start: session venv on the host env, then zsh
+│       ├── mirror/           # macOS: export host env, build its Linux copy
 │       └── config/pi/        # Pi agent configuration mounted into the container
 └── data/                     # Host-cached runtime state (gitignored)
     ├── pip-cache/

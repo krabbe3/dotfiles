@@ -19,6 +19,8 @@ services:
 
       # container start script (Python env setup, then zsh)
       - ./entrypoint.sh:/opt/dune/entrypoint.sh:ro
+      # builds Linux copies of macOS host envs (bin/dune-mentat, step 7b)
+      - ./mirror:/opt/dune/mirror:ro
 
 
       # agent configurations

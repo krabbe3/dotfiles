@@ -19,6 +19,7 @@ SELECTED_PY=""
 FORCE_REBUILD=false
 ISOLATED=false
 GITLAB=false
+REBUILD_ENV=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -36,6 +37,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -g|--gitlab)
       GITLAB=true
+      shift
+      ;;
+    --rebuild-env)
+      REBUILD_ENV=true
       shift
       ;;
     *)
@@ -77,25 +82,29 @@ sandbox_env() {
   printf '%s' "$val"
 }
 
-# GitLab token: blanked in the container (it also arrives via env_file) unless
-# --gitlab; then git rewrites https and ssh URLs of the GitLab host to use it,
+# GitLab token: git rewrites https and ssh URLs of the GitLab host to use it,
 # so 'pip install git+https://...' and 'git+ssh://git@...' URLs both work.
-GITLAB_ENV=(-e GITLAB_READ_TOKEN=)
-if [[ "$GITLAB" = true ]]; then
-  GITLAB_HOST="$(sandbox_env DUNE_GITLAB_HOST)"
-  GITLAB_TOKEN="$(sandbox_env GITLAB_READ_TOKEN)"
-  if [[ -z "$GITLAB_HOST" || -z "$GITLAB_TOKEN" ]]; then
-    echo "Error: --gitlab needs DUNE_GITLAB_HOST and GITLAB_READ_TOKEN in $SANDBOX_DIR/.env" >&2
-    exit 1
-  fi
+# Always used to build mirror envs (no agent involved); in the agent session it
+# is blanked (it also arrives via env_file) unless --gitlab.
+GITLAB_HOST="$(sandbox_env DUNE_GITLAB_HOST)"
+GITLAB_TOKEN="$(sandbox_env GITLAB_READ_TOKEN)"
+GITLAB_GIT_ENV=()
+if [[ -n "$GITLAB_HOST" && -n "$GITLAB_TOKEN" ]]; then
   GITLAB_URL="https://oauth2:${GITLAB_TOKEN}@${GITLAB_HOST}/"
-  GITLAB_ENV=(
-    -e GITLAB_READ_TOKEN="$GITLAB_TOKEN"
+  GITLAB_GIT_ENV=(
     -e GIT_CONFIG_COUNT=3
     -e GIT_CONFIG_KEY_0="url.${GITLAB_URL}.insteadOf" -e GIT_CONFIG_VALUE_0="https://${GITLAB_HOST}/"
     -e GIT_CONFIG_KEY_1="url.${GITLAB_URL}.insteadOf" -e GIT_CONFIG_VALUE_1="git@${GITLAB_HOST}:"
     -e GIT_CONFIG_KEY_2="url.${GITLAB_URL}.insteadOf" -e GIT_CONFIG_VALUE_2="ssh://git@${GITLAB_HOST}/"
   )
+fi
+GITLAB_ENV=(-e GITLAB_READ_TOKEN=)
+if [[ "$GITLAB" = true ]]; then
+  if [[ ${#GITLAB_GIT_ENV[@]} -eq 0 ]]; then
+    echo "Error: --gitlab needs DUNE_GITLAB_HOST and GITLAB_READ_TOKEN in $SANDBOX_DIR/.env" >&2
+    exit 1
+  fi
+  GITLAB_ENV=(-e GITLAB_READ_TOKEN="$GITLAB_TOKEN" "${GITLAB_GIT_ENV[@]}")
   echo "==> GitLab token for $GITLAB_HOST is available to the agent in this session"
 fi
 
@@ -294,8 +303,37 @@ fi
 PY_ENV=(-e DUNE_PY_MODE=image)
 if [[ -n "$HOST_ENV_PY" ]]; then
   if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "==> macOS host: $HOST_ENV holds macOS binaries and cannot run in the Linux container."
-    echo "    Using the image's Python $PYTHON_VERSION instead; install what you need with pip (lost at exit)."
+    # macOS binaries cannot run in the Linux container: use a Linux copy of the
+    # env, built once per package list into a docker volume (step 7b)
+    MIRROR_DIR="$DUNE_DIR/data/mirror"
+    mkdir -p "$MIRROR_DIR"
+    SPEC_TMP="$(mktemp "$MIRROR_DIR/spec.XXXXXX")"
+    if "$HOST_ENV_PY" "$SANDBOX_DIR/mirror/export_env.py" "$ENV_PREFIX" > "$SPEC_TMP"; then
+      ENV_HASH="$("$HOST_ENV_PY" -c 'import json, sys; print(json.load(open(sys.argv[1]))["hash"])' "$SPEC_TMP")"
+      MIRROR_VOL="dune-env-$(printf "%s" "$(basename "$ENV_PREFIX")" | tr -cs 'A-Za-z0-9_.-' '-')-$ENV_HASH"
+      MIRROR_SPEC="$MIRROR_DIR/$MIRROR_VOL.json"
+      mv "$SPEC_TMP" "$MIRROR_SPEC"
+      # editable installs must exist at runtime, at the same path
+      MIRROR_EDITABLE=()
+      while IFS= read -r p; do
+        [[ -n "$p" ]] && MIRROR_EDITABLE+=("$p")
+      done < <("$HOST_ENV_PY" -c 'import json, sys; print("\n".join(e["path"] for e in json.load(open(sys.argv[1]))["editable"]))' "$MIRROR_SPEC")
+      MIRROR_LOCAL=()
+      while IFS= read -r p; do
+        [[ -n "$p" ]] && MIRROR_LOCAL+=("$p")
+      done < <("$HOST_ENV_PY" -c 'import json, sys; print("\n".join(e["path"] for e in json.load(open(sys.argv[1]))["local"]))' "$MIRROR_SPEC")
+
+      EXTRA_VOLUMES+=(-v "$MIRROR_VOL:/opt/dune-env:ro")
+      for p in ${MIRROR_EDITABLE[@]+"${MIRROR_EDITABLE[@]}"}; do
+        EXTRA_VOLUMES+=(-v "$p:$p:ro")
+      done
+      PY_ENV=(-e DUNE_PY_MODE=env -e DUNE_HOST_PY=/opt/dune-env/bin/python -e DUNE_HOST_BIN=/opt/dune-env/bin)
+      echo "==> macOS host: using a Linux copy of $HOST_ENV ($MIRROR_VOL)"
+    else
+      rm -f "$SPEC_TMP"
+      MIRROR_VOL=""
+      echo "==> Warning: could not read $HOST_ENV; using the image's Python $PYTHON_VERSION"
+    fi
   else
     EXTRA_VOLUMES+=(-v "$ENV_PREFIX:$ENV_PREFIX:ro")
     PY_ENV=(-e DUNE_HOST_BIN="$ENV_PREFIX/bin")
@@ -344,6 +382,37 @@ if [ "$FORCE_REBUILD" = true ]; then
 elif ! docker image inspect "dune-python:${PYTHON_VERSION}" >/dev/null 2>&1; then
   echo "==> Image dune-python:${PYTHON_VERSION} not found locally. Building..."
   DOCKER_BUILDKIT=1 docker compose build dev
+fi
+
+# 7b. macOS: build the Linux copy of the host env if it is missing or outdated.
+#     Runs without the agent; the GitLab token (if configured) is available here.
+if [[ -n "${MIRROR_VOL:-}" ]]; then
+  if [[ "$REBUILD_ENV" = true || ! -f "$MIRROR_DIR/$MIRROR_VOL.ok" ]] || ! docker volume inspect "$MIRROR_VOL" >/dev/null 2>&1; then
+    echo "==> Building a Linux copy of $HOST_ENV (first time for this package list, takes a few minutes)..."
+    rm -f "$MIRROR_DIR/$MIRROR_VOL.ok"
+    docker volume create --label "dune.env=$ENV_PREFIX" "$MIRROR_VOL" >/dev/null
+    BUILD_VOLUMES=(-v "$MIRROR_VOL:/opt/dune-env" -v dune-mamba-pkgs:/opt/mamba -v "$MIRROR_SPEC:/opt/dune/spec.json:ro")
+    for p in ${MIRROR_LOCAL[@]+"${MIRROR_LOCAL[@]}"}; do
+      BUILD_VOLUMES+=(-v "$p:$p:ro")
+    done
+    for p in ${MIRROR_EDITABLE[@]+"${MIRROR_EDITABLE[@]}"}; do
+      BUILD_VOLUMES+=(-v "$p:$p:rw")
+    done
+    if ! DOCKER_BUILDKIT=1 docker compose run --rm "${BUILD_VOLUMES[@]}" ${GITLAB_GIT_ENV[@]+"${GITLAB_GIT_ENV[@]}"} \
+        -e GITLAB_READ_TOKEN= -e MAMBA_ROOT_PREFIX=/opt/mamba -e PIP_ROOT_USER_ACTION=ignore \
+        dev python3 /opt/dune/mirror/build_env.py /opt/dune/spec.json /opt/dune-env; then
+      echo "Error: building the Linux copy of $HOST_ENV failed (see above)." >&2
+      echo "       Retry with --rebuild-env, or deactivate the env to use the image's Python." >&2
+      exit 1
+    fi
+    touch "$MIRROR_DIR/$MIRROR_VOL.ok"
+    # drop older copies of the same env
+    docker volume ls -q --filter "label=dune.env=$ENV_PREFIX" | while IFS= read -r old; do
+      if [[ "$old" != "$MIRROR_VOL" ]] && docker volume rm "$old" >/dev/null 2>&1; then
+        rm -f "$MIRROR_DIR/$old.ok" "$MIRROR_DIR/$old.json"
+      fi
+    done
+  fi
 fi
 
 echo "==> Spawning Dune sandbox in: $WORK_DIR"

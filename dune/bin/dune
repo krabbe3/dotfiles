@@ -20,6 +20,7 @@ Available commands:
                Options:
                  -i, --isolated                 Shallow clone instead; agent commits go to dune/agent-latest
                  -g, --gitlab                   Give the agent the GitLab token for this session
+                 --rebuild-env                  macOS: rebuild the Linux copy of the active env
                  -p, --py, --python <version>   Python version (default: active Conda env, else 3.10)
                  -r, --rebuild                  Force clean rebuild (--no-cache)
   spice        (isolated mode) Fetch in-flight commits from the sandbox to dune/agent-latest
