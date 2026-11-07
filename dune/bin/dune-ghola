@@ -3,53 +3,134 @@ set -euo pipefail
 
 usage() {
   cat <<EOF
-Usage: dune ghola <template> [session_name] [conda_env]
-       dune ghola -k | --kill [session_name]
+Usage: dune ghola [-t <template>] [-s <session>] [-e <env>] [-d]
+       dune ghola -k | --kill [session]
+
+Open (or return to) the tmux workspace for the current directory.
+
+Default layout (plain tmux, no tmuxinator needed):
+  window "agent":  agent: dune mentat (38%) | editor: nvim (38%) | terminal: tests, runs (24%)
+  window "git":    lazygit (50%) | review: dune diff / undo / snap -l (50%)
+Start the harness you want (pi, claude, agy) in the dune pane yourself.
 
 Options:
-  -k, --kill [name]   Kill the current project's tmux session (or specify name)
-  -h, --help          Show this message
+  -t, --template <name>  use the tmuxinator template ~/.config/tmuxinator/<name>.yml instead
+  -s, --session <name>   session name (default: <dir>-<hash of path>)
+  -e, --env <env>        conda env name or venv path to activate in every pane
+                         (default: the active venv/conda env, else ./.venv if present)
+  -d, --detach           create the session but do not attach
+  -k, --kill [name]      kill the session of this directory (or the named one)
+  -h, --help             show this message
+
+Inside tmux, ghola switches to the session instead of attaching.
 EOF
   exit 0
 }
 
-PROJECT_ROOT="$(pwd -P)"
-DEFAULT_SESSION_NAME="$(basename "$PROJECT_ROOT")"
+ROOT="$(pwd -P)"
+# safe for tmux targets ('.' and ':' are not allowed), unique per path
+DEFAULT_SESSION="$(basename "$ROOT" | tr -cs 'A-Za-z0-9_-' '-' | sed 's/-*$//')-$(printf '%s' "$ROOT" | cksum | cut -c1-4)"
 
-# Require an explicit argument or show help
-if [[ $# -eq 0 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
-  usage
-fi
+TEMPLATE=""
+SESSION="$DEFAULT_SESSION"
+ENV_ARG=""
+DETACH=false
 
-# Handle -k / --kill
-if [[ "$1" == "-k" ]] || [[ "$1" == "--kill" ]]; then
-  shift
-  SESSION_NAME="${1:-$DEFAULT_SESSION_NAME}"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -t|--template) TEMPLATE="$2"; shift 2 ;;
+    -s|--session) SESSION="$2"; shift 2 ;;
+    -e|--env) ENV_ARG="$2"; shift 2 ;;
+    -d|--detach) DETACH=true; shift ;;
+    -k|--kill)
+      SESSION="${2:-$DEFAULT_SESSION}"
+      if tmux has-session -t "=$SESSION" 2>/dev/null; then
+        tmux kill-session -t "=$SESSION"
+        echo "==> Killed tmux session: $SESSION"
+      else
+        echo "==> No active tmux session named: $SESSION"
+      fi
+      exit 0
+      ;;
+    -h|--help) usage ;;
+    *) echo "Error: unknown argument '$1'" >&2; usage ;;
+  esac
+done
 
-  if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    tmux kill-session -t "$SESSION_NAME"
-    echo "==> Killed tmux session: $SESSION_NAME"
+attach() {
+  if [[ -n "${TMUX:-}" ]]; then
+    exec tmux switch-client -t "=$SESSION"
   else
-    echo "==> No active tmux session named: $SESSION_NAME"
+    exec tmux attach-session -t "=$SESSION"
   fi
-  exit 0
+}
+
+# Return to an existing session
+if tmux has-session -t "=$SESSION" 2>/dev/null; then
+  echo "==> Returning to existing session: $SESSION"
+  [[ "$DETACH" = true ]] && exit 0
+  attach
 fi
 
-TEMPLATE="$1"
-shift
-
-SESSION_NAME="${1:-$DEFAULT_SESSION_NAME}"
-ACTIVE_CONDA_ENV="${CONDA_DEFAULT_ENV:-base}"
-TARGET_CONDA_ENV="${2:-$ACTIVE_CONDA_ENV}"
-
-# Attach if session already exists
-if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-  echo "==> Attaching to existing session: $SESSION_NAME"
-  exec tmux attach -t "$SESSION_NAME"
+# Python env to activate in every pane: conda env name or venv path
+CONDA_NAME=""
+VENV_PATH=""
+if [[ -n "$ENV_ARG" ]]; then
+  if [[ -f "$ENV_ARG/bin/activate" && ! -d "$ENV_ARG/conda-meta" ]]; then
+    VENV_PATH="$(cd "$ENV_ARG" && pwd -P)"
+  else
+    CONDA_NAME="$ENV_ARG"
+  fi
+elif [[ -n "${VIRTUAL_ENV:-}" ]]; then
+  VENV_PATH="$VIRTUAL_ENV"
+elif [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
+  CONDA_NAME="$CONDA_DEFAULT_ENV"
+elif [[ -f "$ROOT/.venv/bin/activate" ]]; then
+  VENV_PATH="$ROOT/.venv"
 fi
 
-echo "==> Spawning layout via tmuxinator [$TEMPLATE] for session: $SESSION_NAME"
-echo "==> Root dir:  $PROJECT_ROOT"
-echo "==> Conda env: $TARGET_CONDA_ENV"
+if [[ -n "$TEMPLATE" ]]; then
+  echo "==> Spawning layout via tmuxinator [$TEMPLATE] for session: $SESSION"
+  exec tmuxinator start "$TEMPLATE" "$SESSION" "${CONDA_NAME:-base}" root="$ROOT"
+fi
 
-exec tmuxinator start "$TEMPLATE" "$SESSION_NAME" "$TARGET_CONDA_ENV" root="$PROJECT_ROOT"
+ACTIVATE=""
+if [[ -n "$VENV_PATH" ]]; then
+  ACTIVATE="source $(printf '%q' "$VENV_PATH/bin/activate")"
+elif [[ -n "$CONDA_NAME" ]]; then
+  ACTIVATE="conda activate $(printf '%q' "$CONDA_NAME")"
+fi
+PREFIX="${ACTIVATE:+$ACTIVATE && }clear"
+
+# split sizes in percent: tmux >= 3.1 takes -l N%, older ones -p N
+TMUX_VER="$(tmux -V | sed 's/[^0-9.]//g')"
+split() {
+  if [[ "${TMUX_VER%%.*}" -gt 3 || ( "${TMUX_VER%%.*}" -eq 3 && "$(echo "$TMUX_VER" | cut -d. -f2)" -ge 1 ) ]]; then
+    tmux split-window -h -t "$1" -c "$ROOT" -l "$2%" -P -F '#{pane_id}'
+  else
+    tmux split-window -h -t "$1" -c "$ROOT" -p "$2" -P -F '#{pane_id}'
+  fi
+}
+
+# build detached at the real terminal size, so the percentages come out right
+SIZE="$(stty size 2>/dev/null </dev/tty || echo "50 200")"
+ROWS="${SIZE% *}"
+COLS="${SIZE#* }"
+
+echo "==> Creating session $SESSION in $ROOT${ACTIVATE:+ ($ACTIVATE)}"
+AGENT_PANE="$(tmux new-session -d -s "$SESSION" -n agent -c "$ROOT" -x "$COLS" -y "$ROWS" -P -F '#{pane_id}')"
+EDITOR_PANE="$(split "$AGENT_PANE" 62)"
+SHELL_PANE="$(split "$EDITOR_PANE" 39)"
+GIT_PANE="$(tmux new-window -d -t "=$SESSION:" -n git -c "$ROOT" -P -F '#{pane_id}')"
+REVIEW_PANE="$(split "$GIT_PANE" 50)"
+
+tmux send-keys -t "$AGENT_PANE" "$PREFIX && dune mentat" Enter
+tmux send-keys -t "$EDITOR_PANE" "$PREFIX && nvim ." Enter
+tmux send-keys -t "$SHELL_PANE" "$PREFIX" Enter
+tmux send-keys -t "$GIT_PANE" "lazygit" Enter
+tmux send-keys -t "$REVIEW_PANE" "$PREFIX" Enter
+tmux select-window -t "=$SESSION:agent"
+tmux select-pane -t "$AGENT_PANE"
+
+[[ "$DETACH" = true ]] && exit 0
+attach

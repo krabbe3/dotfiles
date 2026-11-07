@@ -1,0 +1,261 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Host-side snapshots of the working tree, for reviewing and undoing agent work.
+# A snapshot is a commit object stored under refs/dune/<repo>/snap-<time>:
+# all tracked and untracked files (gitignored ones excluded), built in a
+# throwaway index. HEAD, branches, the staging area and the files are untouched.
+
+usage() {
+  cat <<EOF
+Usage: dune snap [-m <message>] [-l]
+       dune diff [-t] [<snap>] [git diff options] [-- <paths>]
+       dune undo [-y] [<snap>] [-- <paths>]
+
+  snap        Save the current state of all files
+                -m <message>  label for the snapshot (default: manual)
+                -l            list snapshots, newest first
+  diff        Show what changed between <snap> and the current files
+                -t            open the diff in nvim (fugitive, one tab per file)
+  undo        Restore the files to <snap> (asks first, snapshots the current state before)
+                -y            do not ask
+
+<snap> is a name from 'dune snap -l' (snap-YYYYMMDD-HHMMSS) or its number
+in that list (1 = newest). Defaults: diff = start of the last dune session,
+undo = newest snapshot that differs from the current files.
+
+Snapshots older than ${DUNE_SNAP_DAYS:-7} days are pruned once there are more than ${DUNE_SNAP_KEEP:-50}.
+EOF
+  exit 0
+}
+
+CMD="${1:-snap}"
+[[ $# -gt 0 ]] && shift
+case "$CMD" in -h|--help|help) usage ;; esac
+
+if [[ "${DUNE_MODE:-}" == live ]]; then
+  echo "Error: run 'dune $CMD' on the host; .git is read-only inside the sandbox." >&2
+  exit 1
+fi
+
+GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "Error: not in a git repo." >&2
+  exit 1
+}
+cd "$GIT_ROOT"
+NS="refs/dune/$(basename "$GIT_ROOT")"
+# snapshots are not real commits: fixed identity, works without user.name/email
+export GIT_AUTHOR_NAME="dune snap" GIT_AUTHOR_EMAIL="dune@localhost"
+export GIT_COMMITTER_NAME="dune snap" GIT_COMMITTER_EMAIL="dune@localhost"
+KEEP="${DUNE_SNAP_KEEP:-50}"
+KEEP_DAYS="${DUNE_SNAP_DAYS:-7}"
+
+# Tree of the current files, built in a copy of the real index (fast, keeps
+# the real staging area untouched)
+current_tree() {
+  local idx real
+  idx="$(mktemp)"
+  real="$(git rev-parse --git-path index)"
+  if [[ -f "$real" ]]; then cp "$real" "$idx"; else rm -f "$idx"; fi
+  GIT_INDEX_FILE="$idx" git add -A
+  GIT_INDEX_FILE="$idx" git write-tree
+  rm -f "$idx"
+}
+
+# Snapshot refs, newest first
+snap_refs() {
+  git for-each-ref --sort=-refname --format='%(refname)' "$NS/"
+}
+
+short() { echo "${1##*/}"; }
+
+# <snap> argument -> full ref
+resolve() {
+  local arg="$1" ref
+  if [[ "$arg" =~ ^[0-9]+$ ]]; then
+    ref="$(snap_refs | sed -n "${arg}p")"
+  else
+    ref="$NS/${arg##*/}"
+  fi
+  if [[ -z "$ref" ]] || ! git show-ref -q --verify "$ref"; then
+    echo "Error: no snapshot '$arg' (see: dune snap -l)" >&2
+    exit 1
+  fi
+  echo "$ref"
+}
+
+prune() {
+  local now i=0 ref ts
+  now="$(date +%s)"
+  git for-each-ref --sort=-refname --format='%(refname) %(committerdate:unix)' "$NS/" |
+    while read -r ref ts; do
+      i=$((i + 1))
+      if (( i > KEEP && now - ts > KEEP_DAYS * 86400 )); then
+        git update-ref -d "$ref"
+      fi
+    done
+}
+
+cmd_list() {
+  local refs=() ref i older stat cur latest
+  while IFS= read -r ref; do refs+=("$ref"); done < <(snap_refs)
+  if [[ ${#refs[@]} -eq 0 ]]; then
+    echo "No snapshots for $(basename "$GIT_ROOT") yet."
+    return 0
+  fi
+  cur="$(current_tree)"
+  latest="${refs[0]}"
+  stat="$(git diff --shortstat "$latest" "$cur")"
+  printf '    %-22s %-28s %s\n' "(current files)" "" "${stat:- no changes}"
+  for ((i = 0; i < ${#refs[@]}; i++)); do
+    ref="${refs[$i]}"
+    older="${refs[$((i + 1))]:-}"
+    if [[ -n "$older" ]]; then
+      stat="$(git diff --shortstat "$older" "$ref")"
+    else
+      stat=" (oldest)"
+    fi
+    printf '%3d %-22s %-28s %s\n' "$((i + 1))" "$(short "$ref")" \
+      "$(git log -1 --format=%s "$ref" | sed 's/^dune snap: //')" "${stat:- no changes}"
+  done
+}
+
+cmd_snap() {
+  local msg="manual" quiet=false force=false tree last name commit n=1
+  local parent=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -m) msg="$2"; shift 2 ;;
+      -q) quiet=true; shift ;;
+      -f) force=true; shift ;;
+      -l|--list) cmd_list; return 0 ;;
+      -h|--help) usage ;;
+      *) echo "Error: unknown option '$1'" >&2; exit 1 ;;
+    esac
+  done
+
+  tree="$(current_tree)"
+  last="$(snap_refs | head -n 1)"
+  if [[ "$force" = false && -n "$last" && "$(git rev-parse "$last^{tree}")" == "$tree" ]]; then
+    $quiet || echo "==> No changes since $(short "$last")"
+    return 0
+  fi
+
+  git rev-parse -q --verify HEAD >/dev/null && parent=(-p HEAD)
+  commit="$(git commit-tree "$tree" ${parent[@]+"${parent[@]}"} -m "dune snap: $msg")"
+  name="snap-$(date +%Y%m%d-%H%M%S)"
+  while git show-ref -q --verify "$NS/$name"; do
+    n=$((n + 1))
+    name="snap-$(date +%Y%m%d-%H%M%S)-$n"
+  done
+  git update-ref "$NS/$name" "$commit"
+  $quiet || echo "==> Saved $name ($msg)"
+  prune
+}
+
+# Default diff base: newest "session start" snapshot, else the newest one
+session_start() {
+  local ref
+  while IFS= read -r ref; do
+    if [[ "$(git log -1 --format=%s "$ref")" == "dune snap: session start" ]]; then
+      echo "$ref"
+      return 0
+    fi
+  done < <(snap_refs)
+  snap_refs | head -n 1
+}
+
+cmd_diff() {
+  local tool=false snap="" ref cur base_commit cur_commit
+  local args=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -t|--tool) tool=true; shift ;;
+      -h|--help) usage ;;
+      --) args+=("$@"); break ;;
+      -*) args+=("$1"); shift ;;
+      *)
+        if [[ -z "$snap" ]]; then snap="$1"; else args+=("$1"); fi
+        shift
+        ;;
+    esac
+  done
+
+  if [[ -n "$snap" ]]; then
+    ref="$(resolve "$snap")"
+  else
+    ref="$(session_start)"
+    [[ -n "$ref" ]] || { echo "No snapshots yet (dune snap)." >&2; exit 1; }
+  fi
+  cur="$(current_tree)"
+  echo "==> Changes since $(short "$ref") ($(git log -1 --format=%s "$ref" | sed 's/^dune snap: //'))" >&2
+
+  if [[ "$tool" = true ]]; then
+    if git diff --quiet "$ref" "$cur" ${args[@]+"${args[@]}"}; then
+      echo "==> No changes."
+      return 0
+    fi
+    # Both sides as commits, so new (untracked) files show up too
+    base_commit="$(git rev-parse "$ref")"
+    cur_commit="$(git commit-tree "$cur" -m "dune diff: current files")"
+    nvim -c "Git difftool -y $base_commit $cur_commit ${args[*]:-}"
+  else
+    git diff "$ref" "$cur" ${args[@]+"${args[@]}"}
+  fi
+}
+
+cmd_undo() {
+  local yes=false snap="" ref cur ans
+  local paths=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -y|--yes) yes=true; shift ;;
+      -h|--help) usage ;;
+      --) shift; paths=("$@"); break ;;
+      -*) echo "Error: unknown option '$1'" >&2; exit 1 ;;
+      *) snap="$1"; shift ;;
+    esac
+  done
+  [[ ${#paths[@]} -gt 0 ]] || paths=(":/")
+
+  cur="$(current_tree)"
+  if [[ -n "$snap" ]]; then
+    ref="$(resolve "$snap")"
+  else
+    # newest snapshot that differs from the current files
+    while IFS= read -r ref; do
+      git diff --quiet "$ref" "$cur" -- "${paths[@]}" || break
+      ref=""
+    done < <(snap_refs)
+    [[ -n "$ref" ]] || { echo "==> Nothing to undo: the files match every snapshot."; return 0; }
+  fi
+
+  if git diff --quiet "$cur" "$ref" -- "${paths[@]}"; then
+    echo "==> Files already match $(short "$ref")."
+    return 0
+  fi
+
+  echo "==> Restore to $(short "$ref") ($(git log -1 --format=%s "$ref" | sed 's/^dune snap: //')). This reverts:"
+  git --no-pager diff --stat "$cur" "$ref" -- "${paths[@]}"
+  if [[ "$yes" = false ]]; then
+    read -r -p "Proceed? [y/N] " ans </dev/tty
+    [[ "$ans" == [yY]* ]] || { echo "Aborted."; return 1; }
+  fi
+
+  cmd_snap -f -q -m "before undo to $(short "$ref")"
+  # files that did not exist in the snapshot
+  git diff --no-renames --name-only -z --diff-filter=A "$ref" "$cur" -- "${paths[@]}" | xargs -0 rm -f --
+  # files that changed or were deleted since the snapshot
+  if ! git diff --quiet --no-renames --diff-filter=MDT "$ref" "$cur" -- "${paths[@]}"; then
+    git diff --no-renames --name-only -z --diff-filter=MDT "$ref" "$cur" -- "${paths[@]}" |
+      git restore --source="$ref" --worktree --pathspec-from-file=- --pathspec-file-nul
+  fi
+  echo "==> Restored. To go back: dune undo 1"
+}
+
+case "$CMD" in
+  snap) cmd_snap "$@" ;;
+  diff) cmd_diff "$@" ;;
+  undo) cmd_undo "$@" ;;
+  *) echo "Error: unknown command '$CMD'" >&2; usage ;;
+esac

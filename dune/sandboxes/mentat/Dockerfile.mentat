@@ -22,6 +22,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -s /usr/local/bin/python3 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
+# micromamba: builds Linux copies of macOS host envs (sandboxes/mentat/mirror)
+ARG MICROMAMBA_VERSION=2.0.5-0
+RUN case "$(uname -m)" in x86_64) arch=64 ;; aarch64) arch=aarch64 ;; esac \
+    && curl -fsSL -o /usr/local/bin/micromamba \
+       "https://github.com/mamba-org/micromamba-releases/releases/download/${MICROMAMBA_VERSION}/micromamba-linux-${arch}" \
+    && chmod +x /usr/local/bin/micromamba
+
 # install node.js (NodeSource provides npm bundled with nodejs; separate apt npm is redundant)
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
@@ -38,8 +45,8 @@ RUN curl -fsSL https://antigravity.google/cli/install.sh | bash
 RUN chsh -s /bin/zsh root
 
 # Configure Git safe directories & default sandbox agent identity
-RUN git config --global --add safe.directory /workspace \
-    && git config --global --add safe.directory /root/dotfiles \
+# projects are mounted at their host path, so trust every directory
+RUN git config --global --add safe.directory '*' \
     && git config --global user.name "Dune Agent" \
     && git config --global user.email "agent@dune.local"
 

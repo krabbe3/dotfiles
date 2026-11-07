@@ -42,7 +42,7 @@ This will:
 - Run from wherever the repo lives (it does not have to be `~/dotfiles`, but `.zshrc` and `.tmux.conf` expect it there)
 - Fetch the git submodules (oh-my-zsh, tpm, zsh plugins)
 - Auto-detect platform (Linux or macOS) and CPU (x86_64 or arm64)
-- On Linux: Install Neovim `v0.11.5`, lazygit, GNU Stow, tmuxinator to `~/.local/bin`
+- On Linux: Install Neovim `v0.11.5`, lazygit, GNU Stow, tmuxinator (optional, if Ruby `gem` exists) to `~/.local/bin`
 - On macOS: Install Homebrew (if missing), then install tools via `brew`
 - Move every file that would block a symlink to `backups/dotfile_bk_<timestamp>/`
 - Symlink all config directories into `~` via `stow` (`ssh` with `--no-folding`, so `~/.ssh` stays a real dir)
@@ -140,7 +140,7 @@ dotfiles/
 ├── ssh/                       # SSH config (HPC, Makalu, tunnels)
 ├── scripts/                   # Helper scripts (macOS LaTeX OCR)
 │
-├── dune/                      # Isolated AI sandbox (Docker + shallow clone)
+├── dune/                      # AI agent sandbox (Docker; live or isolated mode)
 ├── transcriber/               # Supernote → Markdown via Ollama vision
 │
 └── backups/                   # Timestamped dotfile backups
@@ -159,7 +159,7 @@ dotfiles/
 | [`git/`](git/README.md) | Git | `.config/git/config` | Pull-rebase, custom hooks; identity + GitLab URL rewrite in `config.local` |
 | [`lazygit/`](lazygit/README.md) | Lazygit | `config.yml` | Git TUI companion |
 | [`ssh/`](ssh/README.md) | SSH | `config` | GitHub over 443; private hosts (HPC, proxy jump, port forwards, LLM tunnel) in `config.local` |
-| [`dune/`](dune/README.md) | Dune Sandbox | Docker + bash | Isolated dev sandbox with shallow clones, live sync, auto-commit on exit |
+| [`dune/`](dune/README.md) | Dune Sandbox | Docker + bash | Agent edits your files live while `.git` stays read-only, host-side snapshots (`dune diff` / `dune undo`), same Python env as the host, optional isolated clone mode, tmux workspace (`dune ghola`) |
 | [`transcriber/`](transcriber/README.md) | Supernote Transcriber | Python + Ollama | `.note` → Markdown via `qwen3-vl:8b-instruct` vision model |
 | [`scripts/`](scripts/README.md) | Misc Scripts | Bash | macOS LaTeX OCR (pix2tex) |
 
@@ -188,7 +188,7 @@ Full workstation setup for Linux and macOS. Handles:
 - **Location independent** — `cd`s to its own directory, wherever the repo was cloned
 - **Submodules** — `git submodule update --init --recursive`
 - **Platform detection** — automatically selects Linux or macOS setup path
-- **Linux**: Installs Neovim `v0.11.5`, lazygit `v0.53.0`, GNU Stow, tmuxinator to `~/.local`; picks x86_64 or arm64 downloads by `uname -m`
+- **Linux**: Installs Neovim `v0.11.5`, lazygit `v0.53.0`, GNU Stow, tmuxinator (only if `gem` exists; needed just for `dune ghola -t`) to `~/.local`; picks x86_64 or arm64 downloads by `uname -m`
 - **macOS**: Installs Homebrew (if missing), then `brew install neovim stow lazygit tmux tmuxinator`
 - **Version pinning** — `NVIM_TARGET` and `LAZYGIT_TARGET` variables, `brew pin neovim` on macOS
 - **Retry logic** — all curl downloads retry up to 3 times on failure

@@ -19,7 +19,7 @@ nvim/
         │   └── lazy.lua            # Lazy.nvim spec
         ├── plugins/                # Plugin specs (16 plugins)
         └── user/
-            ├── autocommands.lua    # Black format-on-save for .py
+            ├── autocommands.lua    # Black format-on-save, reload files changed on disk
             ├── keymaps.lua         # Core keybindings
             └── options.lua         # Editor options (tabs, numbers, search)
 ```
@@ -239,6 +239,7 @@ Leader key: `<space>`
 |---------|---------|--------|
 | `BufWritePost` | `*.py` | Auto-format with **Black** (line 79) via Mason |
 | `BufWritePre` | `*.lua` (on LSP attach) | Auto-format with lua_ls |
+| `FocusGained`, `BufEnter`, `CursorHold(I)`, `TermLeave` | all | `checktime`: reload buffers changed on disk (e.g. by a `dune` agent), at most once per second. Buffers with unsaved edits get a W12 warning instead of a reload. Needs tmux `focus-events on`. |
 
 ## TODOs
 

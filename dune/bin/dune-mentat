@@ -11,12 +11,15 @@ done
 DUNE_DIR="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
 SANDBOX_DIR="$DUNE_DIR/sandboxes/mentat"
 
-TARGET_DIR="$(pwd)"
+TARGET_DIR="$(pwd -P)"
 PROJECT_NAME="$(basename "$TARGET_DIR")"
 
-# 2. Parse flags: --py <ver> and --rebuild
+# 2. Parse flags: --py <ver>, --rebuild, --isolated
 SELECTED_PY=""
 FORCE_REBUILD=false
+ISOLATED=false
+GITLAB=false
+REBUILD_ENV=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -28,34 +31,114 @@ while [[ $# -gt 0 ]]; do
       FORCE_REBUILD=true
       shift
       ;;
+    -i|--isolated)
+      ISOLATED=true
+      shift
+      ;;
+    -g|--gitlab)
+      GITLAB=true
+      shift
+      ;;
+    --rebuild-env)
+      REBUILD_ENV=true
+      shift
+      ;;
     *)
       break
       ;;
   esac
 done
 
-# Auto-detect Python version from active Conda environment if not explicitly set via flag
-if [[ -z "$SELECTED_PY" && -n "${CONDA_PREFIX:-}" ]]; then
-  DETECTED_PY="$("$CONDA_PREFIX/bin/python" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || true)"
-  if [[ -n "$DETECTED_PY" ]]; then
-    echo "==> Detected active Conda env (${CONDA_DEFAULT_ENV:-custom}) with Python $DETECTED_PY"
-    SELECTED_PY="$DETECTED_PY"
+# Active host Python env: a venv wins over the Conda env it may be built on
+HOST_ENV="${VIRTUAL_ENV:-${CONDA_PREFIX:-}}"
+HOST_ENV_PY=""
+ENV_VER="" ENV_PREFIX="" ENV_BASE="" ENV_SITE=""
+if [[ -n "$HOST_ENV" && -x "$HOST_ENV/bin/python" ]]; then
+  HOST_ENV_PY="$HOST_ENV/bin/python"
+  # version, prefix, base prefix, site-packages dirs (one per line)
+  ENV_INFO="$("$HOST_ENV_PY" -c '
+import sys, sysconfig
+print("%d.%d" % sys.version_info[:2]); print(sys.prefix); print(sys.base_prefix)
+print(":".join(dict.fromkeys([sysconfig.get_path("purelib"), sysconfig.get_path("platlib")])))
+' 2>/dev/null || true)"
+  if [[ -n "$ENV_INFO" ]]; then
+    { read -r ENV_VER; read -r ENV_PREFIX; read -r ENV_BASE; read -r ENV_SITE; } <<< "$ENV_INFO"
+    echo "==> Detected active Python env: $HOST_ENV (Python $ENV_VER)"
+  else
+    HOST_ENV_PY=""
   fi
 fi
 
-export PYTHON_VERSION="${SELECTED_PY:-3.10}"
+# Python version of the image: -p, else the host env's, else 3.10
+export PYTHON_VERSION="${SELECTED_PY:-${ENV_VER:-3.10}}"
 echo "==> Runtime: Python $PYTHON_VERSION"
 
-# 3. Isolation: Ephemeral Shallow Clone (Hides History, Allows Commits)
+# Read KEY from the shell environment, else from the sandbox .env
+sandbox_env() {
+  local val="${!1:-}"
+  if [[ -z "$val" && -f "$SANDBOX_DIR/.env" ]]; then
+    val="$(grep -E "^$1=" "$SANDBOX_DIR/.env" | tail -n 1 | cut -d '=' -f2- | tr -d '\r"'"'"'' || true)"
+  fi
+  printf '%s' "$val"
+}
+
+# GitLab token: git rewrites https and ssh URLs of the GitLab host to use it,
+# so 'pip install git+https://...' and 'git+ssh://git@...' URLs both work.
+# Always used to build mirror envs (no agent involved); in the agent session it
+# is blanked (it also arrives via env_file) unless --gitlab.
+GITLAB_HOST="$(sandbox_env DUNE_GITLAB_HOST)"
+GITLAB_TOKEN="$(sandbox_env GITLAB_READ_TOKEN)"
+GITLAB_GIT_ENV=()
+if [[ -n "$GITLAB_HOST" && -n "$GITLAB_TOKEN" ]]; then
+  GITLAB_URL="https://oauth2:${GITLAB_TOKEN}@${GITLAB_HOST}/"
+  GITLAB_GIT_ENV=(
+    -e GIT_CONFIG_COUNT=3
+    -e GIT_CONFIG_KEY_0="url.${GITLAB_URL}.insteadOf" -e GIT_CONFIG_VALUE_0="https://${GITLAB_HOST}/"
+    -e GIT_CONFIG_KEY_1="url.${GITLAB_URL}.insteadOf" -e GIT_CONFIG_VALUE_1="git@${GITLAB_HOST}:"
+    -e GIT_CONFIG_KEY_2="url.${GITLAB_URL}.insteadOf" -e GIT_CONFIG_VALUE_2="ssh://git@${GITLAB_HOST}/"
+  )
+fi
+GITLAB_ENV=(-e GITLAB_READ_TOKEN=)
+if [[ "$GITLAB" = true ]]; then
+  if [[ ${#GITLAB_GIT_ENV[@]} -eq 0 ]]; then
+    echo "Error: --gitlab needs DUNE_GITLAB_HOST and GITLAB_READ_TOKEN in $SANDBOX_DIR/.env" >&2
+    exit 1
+  fi
+  GITLAB_ENV=(-e GITLAB_READ_TOKEN="$GITLAB_TOKEN" "${GITLAB_GIT_ENV[@]}")
+  echo "==> GitLab token for $GITLAB_HOST is available to the agent in this session"
+fi
+
+# 3. File ownership: root in the container must map to the host user.
+#    True for rootless Docker and for Colima on macOS; rootful Docker on Linux
+#    would leave root-owned files in the project.
+DOCKER_SECOPTS="$(docker info --format '{{.SecurityOptions}}' 2>/dev/null || true)"
+if [[ "$OSTYPE" == "linux"* && -n "$DOCKER_SECOPTS" && "$DOCKER_SECOPTS" != *rootless* ]]; then
+  if [[ "${DUNE_ALLOW_ROOTFUL:-0}" != 1 ]]; then
+    echo "Error: Docker is not running rootless. The agent would create root-owned files in your project." >&2
+    echo "       Use rootless Docker (DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock)," >&2
+    echo "       or set DUNE_ALLOW_ROOTFUL=1 to continue anyway." >&2
+    exit 1
+  fi
+  echo "==> Warning: rootful Docker, files created by the agent will be owned by root."
+fi
+
+# 4. Workspace: live (default) or isolated shallow clone
+EXTRA_VOLUMES=()
+IS_GIT=false
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   IS_GIT=true
   GIT_ROOT="$(git rev-parse --show-toplevel)"
   PROJECT_NAME="$(basename "$GIT_ROOT")"
+fi
+
+if [[ "$ISOLATED" = true && "$IS_GIT" = true ]]; then
+  # Ephemeral shallow clone: agent may commit freely. On exit its commits land on
+  # dune/agent-<time> (one branch per session), and dune/agent-latest moves there.
+  DUNE_MODE="isolated"
   TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-  BRANCH_NAME="dune/agent-latest"
+  BRANCH_NAME="dune/agent-$TIMESTAMP"
   CLONE_BASE_DIR="${DUNE_CLONE_DIR:-$HOME/.cache/dune-clones}"
   CLONE_DIR="${CLONE_BASE_DIR}/${PROJECT_NAME}-${TIMESTAMP}"
-  ACTIVE_SYMLINK="${CLONE_BASE_DIR}/${PROJECT_NAME}-active"
 
   if ! git -C "$GIT_ROOT" diff --quiet || ! git -C "$GIT_ROOT" diff --cached --quiet; then
     echo "==> Warning: Working tree has uncommitted edits. Only committed HEAD is cloned."
@@ -63,18 +146,21 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 
   mkdir -p "$CLONE_BASE_DIR"
 
-  echo "==> Git repo detected at: $GIT_ROOT"
+  echo "==> Mode: isolated (shallow clone, commits go to $BRANCH_NAME)"
   echo "==> Creating isolated shallow clone at: $CLONE_DIR"
 
-  git clone --depth 1 "file://$GIT_ROOT" "$CLONE_DIR" >/dev/null 2>&1
+  git clone -q --depth 1 "file://$GIT_ROOT" "$CLONE_DIR"
   git -C "$CLONE_DIR" remote remove origin >/dev/null 2>&1 || true
+  # lets 'dune spice' find the clones of this repo
+  git -C "$CLONE_DIR" config dune.source "$GIT_ROOT"
+  CLONE_BASE_HEAD="$(git -C "$CLONE_DIR" rev-parse HEAD)"
 
-  # Maintain a stable active symlink for live syncing from host
-  ln -sfn "$CLONE_DIR" "$ACTIVE_SYMLINK"
+  # Same subdirectory inside the clone as where dune was started
+  REL_DIR="${TARGET_DIR#"$GIT_ROOT"}"
+  WORK_DIR="$CLONE_DIR$REL_DIR"
+  EXTRA_VOLUMES+=(-v "$CLONE_DIR:$CLONE_DIR:rw")
 
-  RUN_DIR="$CLONE_DIR"
-
-  # 4. Handle .env files
+  # Handle .env files
   if [[ -f "$TARGET_DIR/.env" ]]; then
     echo "==> Detected project .env: injecting into sandbox"
     export PROJECT_ENV_FILE="$TARGET_DIR/.env"
@@ -82,63 +168,136 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   elif [[ -f "$SANDBOX_DIR/.env" ]]; then
     echo "==> Using default sandbox .env"
     export PROJECT_ENV_FILE="/dev/null"
-    cp "$SANDBOX_DIR/.env" "$CLONE_DIR/.env"
+    # the GitLab token stays out of the workspace unless --gitlab
+    if [[ "$GITLAB" = true ]]; then
+      cp "$SANDBOX_DIR/.env" "$CLONE_DIR/.env"
+    else
+      grep -v '^GITLAB_READ_TOKEN=' "$SANDBOX_DIR/.env" > "$CLONE_DIR/.env" || true
+    fi
   else
     export PROJECT_ENV_FILE="/dev/null"
   fi
-  # Never let the injected .env reach the auto-commit / dune/agent-latest
+  # Never let the injected .env reach the auto-commit / host branch
   if [[ -d "$CLONE_DIR/.git" ]]; then
     printf '.env\n' >> "$CLONE_DIR/.git/info/exclude"
   fi
 
-  # Trap cleanup on exit, interrupt, or error
+  # Trap cleanup on exit, interrupt, or error. The clone is only deleted once
+  # its commits are safely on the host branch.
+  CLEANED=false
   cleanup() {
+    [[ "$CLEANED" = true || ! -d "$CLONE_DIR" ]] && return 0
+    CLEANED=true
     echo ""
-    echo "==> Cleaning up sandbox clone..."
+    echo "==> Ending isolated session..."
 
-    if [ -d "$CLONE_DIR" ]; then
-      # 1. Check for uncommitted work and preserve it automatically
-      if [ -n "$(git -C "$CLONE_DIR" status --porcelain 2>/dev/null)" ]; then
-        echo "==> Detected uncommitted changes in sandbox: auto-committing..."
-        git -C "$CLONE_DIR" add -A
-        git -C "$CLONE_DIR" commit -m "dune(auto): snapshot of uncommitted agent work on exit" >/dev/null 2>&1 || true
+    # 1. Commit uncommitted work (fixed identity: works without user.name/email)
+    if [ -n "$(git -C "$CLONE_DIR" status --porcelain 2>/dev/null)" ]; then
+      echo "==> Detected uncommitted changes in sandbox: auto-committing..."
+      git -C "$CLONE_DIR" add -A
+      GIT_AUTHOR_NAME="Dune Agent" GIT_AUTHOR_EMAIL="agent@dune.local" \
+      GIT_COMMITTER_NAME="Dune Agent" GIT_COMMITTER_EMAIL="agent@dune.local" \
+        git -C "$CLONE_DIR" commit -q -m "dune(auto): snapshot of uncommitted agent work on exit" ||
+        echo "==> Warning: auto-commit failed"
+    fi
+
+    if [ -n "$(git -C "$CLONE_DIR" status --porcelain 2>/dev/null)" ]; then
+      echo "==> Error: uncommitted work could not be committed. The clone is kept:" >&2
+      echo "           $CLONE_DIR" >&2
+      return 0
+    fi
+
+    SANDBOX_HEAD="$(git -C "$CLONE_DIR" rev-parse HEAD 2>/dev/null || true)"
+    if [[ -z "$SANDBOX_HEAD" || "$SANDBOX_HEAD" == "$CLONE_BASE_HEAD" ]]; then
+      echo "==> No new commits in sandbox."
+      rm -rf "$CLONE_DIR"
+      return 0
+    fi
+
+    # 2. Fetch to this session's branch; keep the clone if that fails
+    if git -C "$GIT_ROOT" fetch -q "$CLONE_DIR" "+HEAD:refs/heads/${BRANCH_NAME}"; then
+      echo "==> Changes preserved on host branch: $BRANCH_NAME"
+      if ! git -C "$GIT_ROOT" branch -f dune/agent-latest "$BRANCH_NAME" >/dev/null 2>&1; then
+        echo "==> Note: dune/agent-latest is checked out, so it was not moved"
       fi
-
-      SANDBOX_HEAD="$(git -C "$CLONE_DIR" rev-parse HEAD 2>/dev/null || true)"
-      HOST_HEAD="$(git -C "$GIT_ROOT" rev-parse HEAD 2>/dev/null || true)"
-
-      if [ -n "$SANDBOX_HEAD" ] && [ "$SANDBOX_HEAD" != "$HOST_HEAD" ]; then
-        echo "==> Ingesting sandbox commits into branch: $BRANCH_NAME"
-        git -C "$GIT_ROOT" fetch "$CLONE_DIR" "HEAD:${BRANCH_NAME}" --force >/dev/null 2>&1 || true
-        echo "==> Changes preserved on host branch: $BRANCH_NAME"
-        echo "==> To review:   git diff HEAD..$BRANCH_NAME"
-        echo "==> To merge:    git merge $BRANCH_NAME"
-        echo "==> To discard:  git branch -D $BRANCH_NAME"
-      else
-        echo "==> No new commits detected in sandbox."
-      fi
-
-      rm -f "$ACTIVE_SYMLINK" 2>/dev/null || true
-      rm -rf "$CLONE_DIR" 2>/dev/null || true
+      echo "==> To review:   git diff HEAD...$BRANCH_NAME"
+      echo "==> To merge:    git merge $BRANCH_NAME"
+      echo "==> To discard:  git branch -D $BRANCH_NAME"
+      rm -rf "$CLONE_DIR"
+    else
+      echo "==> Error: could not fetch the sandbox commits. The clone is kept:" >&2
+      echo "           $CLONE_DIR" >&2
+      echo "           Recover with 'dune spice' (in $GIT_ROOT), then delete the clone." >&2
     fi
     return 0
   }
-  trap cleanup EXIT INT TERM
+  # signals (HUP: tmux pane/session closed) exit, which runs cleanup once
+  trap cleanup EXIT
+  trap 'exit 129' HUP
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
 else
-  IS_GIT=false
-  RUN_DIR="$TARGET_DIR"
+  # Live: the real project, mounted at the same path as on the host.
+  # The agent edits your files directly; .git is read-only, so it can read
+  # history (status/diff/log/blame) but cannot commit, branch, stash or add hooks.
+  DUNE_MODE="live"
+  if [[ "$ISOLATED" = true ]]; then
+    echo "==> Warning: --isolated needs a git repo, falling back to live mode."
+  fi
+
+  if [[ "$IS_GIT" = true ]]; then
+    MOUNT_ROOT="$GIT_ROOT"
+    # Common git dir covers .git and, for linked worktrees, the main repo's .git
+    GIT_COMMON_DIR="$(cd "$(git rev-parse --git-common-dir)" && pwd -P)"
+    EXTRA_VOLUMES+=(-v "$MOUNT_ROOT:$MOUNT_ROOT:rw" -v "$GIT_COMMON_DIR:$GIT_COMMON_DIR:ro")
+    echo "==> Mode: live (editing $MOUNT_ROOT directly, .git read-only)"
+  else
+    MOUNT_ROOT="$TARGET_DIR"
+    EXTRA_VOLUMES+=(-v "$MOUNT_ROOT:$MOUNT_ROOT:rw")
+    echo "==> Mode: live, no git repo: edits go to $MOUNT_ROOT with no history to fall back on"
+  fi
+  WORK_DIR="$TARGET_DIR"
+
+  # Host-side snapshots: at start, every few minutes while files change, at exit
+  if [[ "$IS_GIT" = true ]]; then
+    SNAP="$DUNE_DIR/bin/dune-snap"
+    (cd "$GIT_ROOT" && "$SNAP" snap -f -q -m "session start") ||
+      echo "==> Warning: could not take the session-start snapshot"
+    (
+      # kill the running sleep too, so nothing lingers after the session
+      trap 'kill "$SLEEP_PID" 2>/dev/null; exit 0' TERM
+      cd "$GIT_ROOT"
+      while true; do
+        sleep "${DUNE_SNAP_INTERVAL:-180}" &
+        SLEEP_PID=$!
+        wait "$SLEEP_PID"
+        "$SNAP" snap -q -m "auto" || true
+      done
+    ) >/dev/null 2>&1 &
+    SNAP_LOOP_PID=$!
+
+    live_cleanup() {
+      kill "$SNAP_LOOP_PID" 2>/dev/null || true
+      (cd "$GIT_ROOT" && "$SNAP" snap -q -m "session end") || true
+      echo ""
+      echo "==> Review the session:  dune diff      (in nvim: dune diff -t)"
+      echo "==> Undo it:             dune undo $(cd "$GIT_ROOT" && "$SNAP" snap -l | awk '/session start/ {print $2; exit}')"
+    }
+    # signals (HUP: tmux pane/session closed) exit, which runs live_cleanup once
+    trap live_cleanup EXIT
+    trap 'exit 129' HUP
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+  fi
 
   if [[ -f "$TARGET_DIR/.env" ]]; then
     export PROJECT_ENV_FILE="$TARGET_DIR/.env"
-  elif [[ -f "$SANDBOX_DIR/.env" ]]; then
-    export PROJECT_ENV_FILE="$SANDBOX_DIR/.env"
   else
     export PROJECT_ENV_FILE="/dev/null"
   fi
 fi
 
 # 5. Dynamic Data Mounts via DUNE_DATA_MOUNTS
-EXTRA_VOLUMES=()
 PROJECT_DATA_MOUNTS=""
 
 if [[ -f "$TARGET_DIR/.env" ]]; then
@@ -164,18 +323,75 @@ if [[ -n "$PROJECT_DATA_MOUNTS" ]]; then
   done
 fi
 
-# 6. Active Host Conda Environment Direct Passthrough
-CONTAINER_CONDA_PATH=""
-if [[ -n "${CONDA_PREFIX:-}" && -d "$CONDA_PREFIX" ]]; then
-  echo "==> Passing active host Conda env (${CONDA_DEFAULT_ENV:-custom}): $CONDA_PREFIX"
-  EXTRA_VOLUMES+=(-v "$CONDA_PREFIX:$CONDA_PREFIX:ro")
-  CONTAINER_CONDA_PATH="$CONDA_PREFIX/bin"
+# 6. Host Python env passthrough (Linux hosts): mounted read-only at the same
+#    path; entrypoint.sh adds a session venv on top for the agent's installs
+PY_ENV=(-e DUNE_PY_MODE=image)
+if [[ -n "$HOST_ENV_PY" ]]; then
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS binaries cannot run in the Linux container: use a Linux copy of the
+    # env, built once per package list into a docker volume (step 7b)
+    MIRROR_DIR="$DUNE_DIR/data/mirror"
+    mkdir -p "$MIRROR_DIR"
+    SPEC_TMP="$(mktemp "$MIRROR_DIR/spec.XXXXXX")"
+    if "$HOST_ENV_PY" "$SANDBOX_DIR/mirror/export_env.py" "$ENV_PREFIX" > "$SPEC_TMP"; then
+      ENV_HASH="$("$HOST_ENV_PY" -c 'import json, sys; print(json.load(open(sys.argv[1]))["hash"])' "$SPEC_TMP")"
+      MIRROR_VOL="dune-env-$(printf "%s" "$(basename "$ENV_PREFIX")" | tr -cs 'A-Za-z0-9_.-' '-')-$ENV_HASH"
+      MIRROR_SPEC="$MIRROR_DIR/$MIRROR_VOL.json"
+      mv "$SPEC_TMP" "$MIRROR_SPEC"
+      # editable installs must exist at runtime, at the same path
+      MIRROR_EDITABLE=()
+      while IFS= read -r p; do
+        [[ -n "$p" ]] && MIRROR_EDITABLE+=("$p")
+      done < <("$HOST_ENV_PY" -c 'import json, sys; print("\n".join(e["path"] for e in json.load(open(sys.argv[1]))["editable"]))' "$MIRROR_SPEC")
+      MIRROR_LOCAL=()
+      while IFS= read -r p; do
+        [[ -n "$p" ]] && MIRROR_LOCAL+=("$p")
+      done < <("$HOST_ENV_PY" -c 'import json, sys; print("\n".join(e["path"] for e in json.load(open(sys.argv[1]))["local"]))' "$MIRROR_SPEC")
+
+      EXTRA_VOLUMES+=(-v "$MIRROR_VOL:/opt/dune-env:ro")
+      for p in ${MIRROR_EDITABLE[@]+"${MIRROR_EDITABLE[@]}"}; do
+        EXTRA_VOLUMES+=(-v "$p:$p:ro")
+      done
+      PY_ENV=(-e DUNE_PY_MODE=env -e DUNE_HOST_PY=/opt/dune-env/bin/python -e DUNE_HOST_BIN=/opt/dune-env/bin)
+      echo "==> macOS host: using a Linux copy of $HOST_ENV ($MIRROR_VOL)"
+    else
+      rm -f "$SPEC_TMP"
+      MIRROR_VOL=""
+      echo "==> Warning: could not read $HOST_ENV; using the image's Python $PYTHON_VERSION"
+    fi
+  else
+    EXTRA_VOLUMES+=(-v "$ENV_PREFIX:$ENV_PREFIX:ro")
+    PY_ENV=(-e DUNE_HOST_BIN="$ENV_PREFIX/bin")
+    if [[ "$ENV_PREFIX" == "$ENV_BASE" ]]; then
+      # Conda env (or any full Python install): run its own interpreter
+      PY_ENV+=(-e DUNE_PY_MODE=env -e DUNE_HOST_PY="$HOST_ENV_PY")
+      echo "==> Passing host env read-only: $ENV_PREFIX"
+    else
+      # venv: its packages are added to the session venv via site dirs
+      PY_ENV+=(-e DUNE_HOST_SITE="$ENV_SITE")
+      case "$ENV_BASE" in
+        /|/usr|/usr/local)
+          # system Python base: the container has its own /usr, use the image's
+          # Python of the same version with the venv's packages
+          PY_ENV+=(-e DUNE_PY_MODE=image)
+          if [[ "$PYTHON_VERSION" != "$ENV_VER" ]]; then
+            echo "==> Warning: -p $PYTHON_VERSION differs from the venv's Python $ENV_VER; its compiled packages may not load."
+          fi
+          echo "==> Passing host venv read-only: $ENV_PREFIX (on the image's Python $PYTHON_VERSION)"
+          ;;
+        *)
+          EXTRA_VOLUMES+=(-v "$ENV_BASE:$ENV_BASE:ro")
+          PY_ENV+=(-e DUNE_PY_MODE=env -e DUNE_HOST_PY="$HOST_ENV_PY")
+          echo "==> Passing host venv read-only: $ENV_PREFIX (base Python: $ENV_BASE)"
+          ;;
+      esac
+    fi
+  fi
 fi
 
-# Container-side project name: stable and safe for paths and docker names
+# Container-side project name: stable and safe for docker names
 PROJECT_NAME="$(printf '%s' "$PROJECT_NAME" | tr -cs 'A-Za-z0-9_-' '-' | sed 's/^-*//; s/-*$//')"
 export PROJECT_NAME
-export TARGET_PROJECT="$RUN_DIR"
 export SANDBOX_NAME="${PROJECT_NAME}-agent"
 
 cd "$SANDBOX_DIR"
@@ -184,7 +400,16 @@ mkdir -p "$DUNE_DIR/data/pip-cache" \
          "$DUNE_DIR/data/nvim/share" \
          "$DUNE_DIR/data/nvim/state"
 
-# 8. Build Python image on demand or on forced rebuild
+# Claude Code state file is mounted as a file; if it is missing, docker would
+# create a directory in its place (an empty one from earlier runs is replaced)
+CLAUDE_JSON="$SANDBOX_DIR/config/claude.json"
+if [[ -d "$CLAUDE_JSON" ]]; then
+  rmdir "$CLAUDE_JSON" 2>/dev/null ||
+    { echo "Error: $CLAUDE_JSON is a non-empty directory; remove it and retry." >&2; exit 1; }
+fi
+[[ -f "$CLAUDE_JSON" ]] || echo '{}' > "$CLAUDE_JSON"
+
+# 7. Build Python image on demand or on forced rebuild
 if [ "$FORCE_REBUILD" = true ]; then
   echo "==> Rebuild requested. Building dune-python:${PYTHON_VERSION} (clean)..."
   DOCKER_BUILDKIT=1 docker compose build --no-cache dev
@@ -193,19 +418,43 @@ elif ! docker image inspect "dune-python:${PYTHON_VERSION}" >/dev/null 2>&1; the
   DOCKER_BUILDKIT=1 docker compose build dev
 fi
 
-echo "==> Spawning Dune sandbox for: $RUN_DIR"
-if [ "${IS_GIT:-false}" = true ]; then
+# 7b. macOS: build the Linux copy of the host env if it is missing or outdated.
+#     Runs without the agent; the GitLab token (if configured) is available here.
+if [[ -n "${MIRROR_VOL:-}" ]]; then
+  if [[ "$REBUILD_ENV" = true || ! -f "$MIRROR_DIR/$MIRROR_VOL.ok" ]] || ! docker volume inspect "$MIRROR_VOL" >/dev/null 2>&1; then
+    echo "==> Building a Linux copy of $HOST_ENV (first time for this package list, takes a few minutes)..."
+    rm -f "$MIRROR_DIR/$MIRROR_VOL.ok"
+    docker volume create --label "dune.env=$ENV_PREFIX" "$MIRROR_VOL" >/dev/null
+    BUILD_VOLUMES=(-v "$MIRROR_VOL:/opt/dune-env" -v dune-mamba-pkgs:/opt/mamba -v "$MIRROR_SPEC:/opt/dune/spec.json:ro")
+    for p in ${MIRROR_LOCAL[@]+"${MIRROR_LOCAL[@]}"}; do
+      BUILD_VOLUMES+=(-v "$p:$p:ro")
+    done
+    for p in ${MIRROR_EDITABLE[@]+"${MIRROR_EDITABLE[@]}"}; do
+      BUILD_VOLUMES+=(-v "$p:$p:rw")
+    done
+    if ! DOCKER_BUILDKIT=1 docker compose run --rm "${BUILD_VOLUMES[@]}" ${GITLAB_GIT_ENV[@]+"${GITLAB_GIT_ENV[@]}"} \
+        -e GITLAB_READ_TOKEN= -e MAMBA_ROOT_PREFIX=/opt/mamba -e PIP_ROOT_USER_ACTION=ignore \
+        dev python3 /opt/dune/mirror/build_env.py /opt/dune/spec.json /opt/dune-env; then
+      echo "Error: building the Linux copy of $HOST_ENV failed (see above)." >&2
+      echo "       Retry with --rebuild-env, or deactivate the env to use the image's Python." >&2
+      exit 1
+    fi
+    touch "$MIRROR_DIR/$MIRROR_VOL.ok"
+    # drop older copies of the same env
+    docker volume ls -q --filter "label=dune.env=$ENV_PREFIX" | while IFS= read -r old; do
+      if [[ "$old" != "$MIRROR_VOL" ]] && docker volume rm "$old" >/dev/null 2>&1; then
+        rm -f "$MIRROR_DIR/$old.ok" "$MIRROR_DIR/$old.json"
+      fi
+    done
+  fi
+fi
+
+echo "==> Spawning Dune sandbox in: $WORK_DIR"
+if [ "$DUNE_MODE" = isolated ]; then
   echo "==> Live sync available from another terminal:"
   echo "    dune spice"
 fi
 
-# 9. Launch container, prioritize Conda binaries, then start interactive zsh
-DOCKER_BUILDKIT=1 docker compose run "${EXTRA_VOLUMES[@]}" --service-ports --rm dev /bin/zsh -c '
-  # Conda-Binaries im Container aktivieren falls übergeben
-  if [ -n "'"$CONTAINER_CONDA_PATH"'" ] && [ -d "'"$CONTAINER_CONDA_PATH"'" ]; then
-    export PATH="'"$CONTAINER_CONDA_PATH"':$PATH"
-    echo "==> Active environment Python: $(which python3)"
-  fi
-
-  exec /bin/zsh
-'
+# 8. Launch container: entrypoint.sh sets up Python, then starts zsh
+DOCKER_BUILDKIT=1 docker compose run "${EXTRA_VOLUMES[@]}" "${PY_ENV[@]}" "${GITLAB_ENV[@]}" -w "$WORK_DIR" -e DUNE_MODE="$DUNE_MODE" \
+  --service-ports --rm dev /bin/bash /opt/dune/entrypoint.sh

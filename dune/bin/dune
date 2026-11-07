@@ -15,15 +15,22 @@ usage() {
 Usage: dune <command> [options]
 
 Available commands:
-  mentat       Launch isolated AI sandbox (shallow clone + dev container)
+  mentat       Launch AI sandbox on the current project
+               Default (live): agent edits your files directly, .git is read-only
                Options:
-                 -p, --py, --python <version>   Specify Python version (default: 3.10)
+                 -i, --isolated                 Shallow clone instead; agent commits go to dune/agent-<time>
+                 -g, --gitlab                   Give the agent the GitLab token for this session
+                 --rebuild-env                  macOS: rebuild the Linux copy of the active env
+                 -p, --py, --python <version>   Python version (default: active Conda env, else 3.10)
                  -r, --rebuild                  Force clean rebuild (--no-cache)
-  spice        Fetch in-flight commits from active sandbox to dune/agent-latest (spice must flow continuously)
-  ghola        Resurrect workspace layout (editor/git/explorer) via tmuxinator
+  spice        (isolated mode) Fetch sandbox commits to dune/agent-<time> (also recovers kept clones)
+  snap         Snapshot all files (host side, refs/dune/...); -l lists snapshots
+  diff         Show changes since a snapshot (default: start of last session); -t opens nvim
+  undo         Restore files to a snapshot (default: newest one that differs)
+  ghola        Open the tmux workspace: agent | editor | terminal, and lazygit | review
                Usage:
-                 dune ghola <template> [session_name] [conda_env]
-                 dune ghola -k [session_name]
+                 dune ghola [-t <tmuxinator template>] [-s <session>] [-e <env>] [-d]
+                 dune ghola -k [session]
   help         Show this message
 EOF
   exit 0
@@ -45,6 +52,9 @@ case "$COMMAND" in
     ;;
   ghola)
     exec "$DUNE_BIN_DIR/dune-ghola" "$@"
+    ;;
+  snap|diff|undo)
+    exec "$DUNE_BIN_DIR/dune-snap" "$COMMAND" "$@"
     ;;
   help|-h|--help)
     usage

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Fetch commits from this repo's isolated sandboxes (running, or clones kept
+# after a failed exit) to dune/agent-<time>, and move dune/agent-latest to the newest.
+
 GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 if [ -z "$GIT_ROOT" ]; then
   echo "Error: Not in a git repo."
@@ -8,13 +11,32 @@ if [ -z "$GIT_ROOT" ]; then
 fi
 
 PROJECT_NAME="$(basename "$GIT_ROOT")"
-ACTIVE_SYMLINK="${DUNE_CLONE_DIR:-$HOME/.cache/dune-clones}/${PROJECT_NAME}-active"
+CLONE_BASE_DIR="${DUNE_CLONE_DIR:-$HOME/.cache/dune-clones}"
 
-if [ ! -L "$ACTIVE_SYMLINK" ]; then
-  echo "No active Dune sandbox found for $PROJECT_NAME."
+NEWEST=""
+for clone in "$CLONE_BASE_DIR/$PROJECT_NAME"-*; do
+  [[ -d "$clone/.git" ]] || continue
+  # only clones made from this repo
+  [[ "$(git -C "$clone" config --get dune.source 2>/dev/null)" == "$GIT_ROOT" ]] || continue
+  ts="${clone#"$CLONE_BASE_DIR/$PROJECT_NAME"-}"
+  [[ "$ts" =~ ^[0-9]{8}_[0-9]{6}$ ]] || continue
+
+  branch="dune/agent-$ts"
+  if git fetch -q "$clone" "+HEAD:refs/heads/$branch"; then
+    echo "==> Synced $clone -> $branch"
+    NEWEST="$branch"
+  else
+    echo "==> Warning: could not fetch $clone (is $branch checked out?)" >&2
+  fi
+done
+
+if [ -z "$NEWEST" ]; then
+  echo "No isolated Dune sandbox found for $PROJECT_NAME."
+  echo "(In live mode there is nothing to sync: the agent edits your files directly.)"
   exit 1
 fi
 
-git fetch "$ACTIVE_SYMLINK" HEAD:dune/agent-latest --force
-echo "==> Synced latest sandbox commits into branch: dune/agent-latest"
-echo "==> Run: git merge dune/agent-latest"
+if ! git branch -f dune/agent-latest "$NEWEST" >/dev/null 2>&1; then
+  echo "==> Note: dune/agent-latest is checked out, so it was not moved"
+fi
+echo "==> Review: git diff HEAD...$NEWEST    Merge: git merge $NEWEST"

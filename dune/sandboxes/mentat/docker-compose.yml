@@ -9,14 +9,18 @@ services:
       args:
         PYTHON_VERSION: ${PYTHON_VERSION:-3.10}
     user: "0:0"
-    working_dir: /workspace/${PROJECT_NAME:?PROJECT_NAME not set}
+    # project mount (same path as on the host) and working dir are added by
+    # bin/dune-mentat: live mode = real repo rw + .git ro, isolated = clone
     volumes:
-      - ${TARGET_PROJECT}:/workspace/${PROJECT_NAME}:rw
-
       # Persistent caches and Neovim states (stored in dune/data/)
       - ../../data/nvim/share:/root/.local/share/nvim:rw
       - ../../data/nvim/state:/root/.local/state/nvim:rw
       - ../../data/pip-cache:/root/.cache/pip:rw
+
+      # container start script (Python env setup, then zsh)
+      - ./entrypoint.sh:/opt/dune/entrypoint.sh:ro
+      # builds Linux copies of macOS host envs (bin/dune-mentat, step 7b)
+      - ./mirror:/opt/dune/mirror:ro
 
 
       # agent configurations
@@ -29,10 +33,7 @@ services:
     environment:
       - HOME=/root
       - TERM=xterm-256color
-      # Optional GitLab PAT (will be skipped or empty if not provided)
-      - GIT_CONFIG_COUNT=${GITLAB_READ_TOKEN:+1}
-      - GIT_CONFIG_KEY_0=url.https://oauth2:${GITLAB_READ_TOKEN:-}@gitlab.tu-ilmenau.de/.insteadOf
-      - GIT_CONFIG_VALUE_0=https://gitlab.tu-ilmenau.de/
+      # GitLab token: only passed with 'dune mentat --gitlab' (see bin/dune-mentat)
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -45,7 +46,7 @@ services:
     stdin_open: true
     tty: true
     env_file:
-      # 1. Base AI sandbox defaults / API keys in sandboxes/ai/.env
+      # 1. Base AI sandbox defaults / API keys in sandboxes/mentat/.env
       - path: .env
         required: false
       # 2. Project-level .env overrides
