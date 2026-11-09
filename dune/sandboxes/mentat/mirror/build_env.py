@@ -58,14 +58,9 @@ def main():
                 warnings.append([s, "not available for Linux"])
         conda = kept
 
-    # start from an empty prefix; it is a mounted volume, so empty it, keep the dir
-    os.makedirs(prefix, exist_ok=True)
-    for entry in os.listdir(prefix):
-        path = os.path.join(prefix, entry)
-        if os.path.isdir(path) and not os.path.islink(path):
-            shutil.rmtree(path)
-        else:
-            os.remove(path)
+    # start from a missing prefix: micromamba refuses to create an env in an
+    # existing non-conda dir, so the prefix is a subdir of the mounted volume
+    shutil.rmtree(prefix, ignore_errors=True)
 
     cmd = [MAMBA, "create", "-y", "-p", prefix, "--override-channels"]
     for ch in channels:

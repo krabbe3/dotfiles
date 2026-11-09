@@ -352,7 +352,7 @@ if [[ -n "$HOST_ENV_PY" ]]; then
       for p in ${MIRROR_EDITABLE[@]+"${MIRROR_EDITABLE[@]}"}; do
         EXTRA_VOLUMES+=(-v "$p:$p:ro")
       done
-      PY_ENV=(-e DUNE_PY_MODE=env -e DUNE_HOST_PY=/opt/dune-env/bin/python -e DUNE_HOST_BIN=/opt/dune-env/bin)
+      PY_ENV=(-e DUNE_PY_MODE=env -e DUNE_HOST_PY=/opt/dune-env/env/bin/python -e DUNE_HOST_BIN=/opt/dune-env/env/bin)
       echo "==> macOS host: using a Linux copy of $HOST_ENV ($MIRROR_VOL)"
     else
       rm -f "$SPEC_TMP"
@@ -434,7 +434,7 @@ if [[ -n "${MIRROR_VOL:-}" ]]; then
     done
     if ! DOCKER_BUILDKIT=1 docker compose run --rm "${BUILD_VOLUMES[@]}" ${GITLAB_GIT_ENV[@]+"${GITLAB_GIT_ENV[@]}"} \
         -e GITLAB_READ_TOKEN= -e MAMBA_ROOT_PREFIX=/opt/mamba -e PIP_ROOT_USER_ACTION=ignore \
-        dev python3 /opt/dune/mirror/build_env.py /opt/dune/spec.json /opt/dune-env; then
+        dev python3 /opt/dune/mirror/build_env.py /opt/dune/spec.json /opt/dune-env/env; then
       echo "Error: building the Linux copy of $HOST_ENV failed (see above)." >&2
       echo "       Retry with --rebuild-env, or deactivate the env to use the image's Python." >&2
       exit 1
