@@ -201,7 +201,7 @@ Full workstation setup for Linux and macOS. Handles:
 
 ### `setup_docker.sh`
 
-Minimal setup for Docker containers. Installs Neovim to `/opt`, symlinks `nvim`, `zsh`, `tmux` only. Uses `make docker` in `dune/sandboxes/mentat/Dockerfile.mentat`.
+Minimal setup for Docker containers. Installs Neovim to `/opt`, symlinks `nvim`, `zsh`, `tmux` only. Uses `make docker` in `dune/sandboxes/mentat/Dockerfile.mentat`, on a shallow clone of the local repo (committed files only).
 
 ---
 

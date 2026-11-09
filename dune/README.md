@@ -291,6 +291,11 @@ dotfiles/dune/
    (set up separately; `dune mentat` refuses rootful Docker, see Live Mode).
 3. `dune mentat` builds the image on first use for the selected Python version. After pulling changes
    to `Dockerfile.mentat` (e.g. micromamba for the macOS env copy), run `dune mentat -r` once.
+   The image gets these dotfiles from a shallow clone of your local repo (`git clone --depth 1`):
+   committed changes are included whether pushed or not; uncommitted edits and gitignored files
+   (`.env`, agent logins, `data/`, `backups/`) are not. The image keeps that state until the next
+   `dune mentat -r`, so commit and rebuild to get dotfile changes into the sandbox. Submodules are
+   fetched from GitHub during the clone. Needs Docker Compose 2.17+ (`additional_contexts`).
 4. For editing alongside the agent: the nvim reload autocommand and tmux `focus-events` are part of
    these dotfiles (`nvim/.../autocommands.lua`, `tmux/.tmux.conf`); reload tmux once with `Prefix + r`.
 

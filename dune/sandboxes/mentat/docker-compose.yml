@@ -6,6 +6,10 @@ services:
     build:
       context: .
       dockerfile: ${SANDBOX_DOCKERFILE:-Dockerfile.mentat}
+      # shallow clone of the local dotfiles repo, set by bin/dune-mentat;
+      # the fallback does not exist, so builds outside dune-mentat fail
+      additional_contexts:
+        dotfiles: ${DOTFILES_CONTEXT:-./.no-dotfiles-context}
       args:
         PYTHON_VERSION: ${PYTHON_VERSION:-3.10}
     user: "0:0"

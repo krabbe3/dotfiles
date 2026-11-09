@@ -409,13 +409,36 @@ if [[ -d "$CLAUDE_JSON" ]]; then
 fi
 [[ -f "$CLAUDE_JSON" ]] || echo '{}' > "$CLAUDE_JSON"
 
-# 7. Build Python image on demand or on forced rebuild
+# 7. Build Python image on demand or on forced rebuild.
+#    The image gets the dotfiles from a shallow clone of the local repo: committed
+#    work (pushed or not), none of the gitignored files (.env, agent logins, data)
+build_image() {
+  local dotfiles ctx status=0
+  if ! dotfiles="$(git -C "$DUNE_DIR" rev-parse --show-toplevel 2>/dev/null)"; then
+    echo "Error: $DUNE_DIR is not inside a git checkout of the dotfiles; cannot build the image." >&2
+    exit 1
+  fi
+  if [ -n "$(git -C "$dotfiles" status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+    echo "==> Note: uncommitted changes in $dotfiles are not in the image (commit them first)"
+  fi
+  ctx="$(mktemp -d)"
+  echo "==> Cloning dotfiles from $dotfiles (committed HEAD)"
+  if ! git clone -q --depth 1 --recurse-submodules "file://$dotfiles" "$ctx/dotfiles"; then
+    rm -rf "$ctx"
+    echo "Error: could not clone $dotfiles for the image build." >&2
+    exit 1
+  fi
+  DOTFILES_CONTEXT="$ctx/dotfiles" DOCKER_BUILDKIT=1 docker compose build ${1+"$@"} dev || status=$?
+  rm -rf "$ctx"
+  return "$status"
+}
+
 if [ "$FORCE_REBUILD" = true ]; then
   echo "==> Rebuild requested. Building dune-python:${PYTHON_VERSION} (clean)..."
-  DOCKER_BUILDKIT=1 docker compose build --no-cache dev
+  build_image --no-cache
 elif ! docker image inspect "dune-python:${PYTHON_VERSION}" >/dev/null 2>&1; then
   echo "==> Image dune-python:${PYTHON_VERSION} not found locally. Building..."
-  DOCKER_BUILDKIT=1 docker compose build dev
+  build_image
 fi
 
 # 7b. macOS: build the Linux copy of the host env if it is missing or outdated.

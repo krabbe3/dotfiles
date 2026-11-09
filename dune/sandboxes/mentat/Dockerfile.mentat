@@ -51,12 +51,14 @@ RUN git config --global --add safe.directory '*' \
     && git config --global user.email "agent@dune.local"
 
 # Provision dotfiles and run Neovim/tooling setup
+# the 'dotfiles' build context is a shallow clone of the local dotfiles repo,
+# made by bin/dune-mentat: committed files only, none of the gitignored ones
 USER root
 ENV HOME=/root
 WORKDIR $HOME/dotfiles
 
+COPY --from=dotfiles . /root/dotfiles
 RUN git config --global url."https://github.com/".insteadOf "git@github.com:" \
-    && git clone --recurse-submodules https://github.com/krabbe3/dotfiles.git /root/dotfiles \
     && make -C /root/dotfiles docker
 
 # Base installations for mentat
