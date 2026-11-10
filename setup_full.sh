@@ -15,9 +15,9 @@ if [ -e .git ] && command -v git >/dev/null 2>&1; then
 fi
 
 ###### VERSION REQUIREMENTS ######
-NVIM_TARGET="v0.11.5"
+NVIM_TARGET="v0.12.5"
 LAZYGIT_TARGET="v0.53.0"
-TREE_SITTER_TARGET="v0.25.4"
+TREE_SITTER_TARGET="v0.27.2"
 
 ###### DIRECTORIES & PATH ######
 mkdir -p "$HOME/.local/bin" "$HOME/.local/opt"
@@ -73,15 +73,22 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     brew pin neovim
     echo "==> Pinned neovim version: $(nvim --version | head -n 1 | awk '{print $2}')"
 
-    # Install cargo packages (treesitter and texlab for nvim lsp mainly)
-    if ! command -v tree-sitter >/dev/null 2>&1 && [ ! -x "$HOME/.cargo/bin/tree-sitter" ]; then
-        echo "==> Installing tree-sitter CLI via Cargo..."
-        export PATH="$HOME/.cargo/bin:$PATH"
-        cargo install --locked "tree-sitter-cli@${TREE_SITTER_TARGET#v}"
-        cargo install --locked texlab
-        echo "==> cargo packages installed."
+        # Install cargo packages (tree-sitter and texlab for nvim mainly)
+    export PATH="$HOME/.cargo/bin:$PATH"
+
+    CURRENT_TS="$(tree-sitter --version 2>/dev/null | awk '{print $2}' || true)"
+    if [ "v${CURRENT_TS}" != "$TREE_SITTER_TARGET" ]; then
+        echo "==> tree-sitter '${CURRENT_TS:-none}' detected (required: $TREE_SITTER_TARGET). Installing via cargo..."
+        cargo install --locked --force "tree-sitter-cli@${TREE_SITTER_TARGET#v}"
     else
-        echo "==> cargo packages already installed, skipping."
+        echo "==> tree-sitter $TREE_SITTER_TARGET already installed, skipping."
+    fi
+
+    if ! command -v texlab >/dev/null 2>&1; then
+        echo "==> Installing texlab via cargo..."
+        cargo install --locked texlab
+    else
+        echo "==> texlab already installed, skipping."
     fi
 
 elif [[ "$OSTYPE" == "linux"* ]]; then
@@ -96,7 +103,6 @@ elif [[ "$OSTYPE" == "linux"* ]]; then
       *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
     esac
 
-    # install nvim (v0.11.5 required; needs older glibc compat from neovim-releases)
     INSTALLED_NVIM="$HOME/.local/bin/nvim"
     CURRENT_NVIM=""
     if [ -x "$INSTALLED_NVIM" ]; then
@@ -167,19 +173,18 @@ elif [[ "$OSTYPE" == "linux"* ]]; then
     fi
 
     # install tree-sitter CLI (via cargo due to glibc compatibility)
-    if ! command -v tree-sitter >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/tree-sitter" ]; then
-        echo "==> Installing tree-sitter CLI via cargo..."
-        # Ensure Rust toolchain is available
+    export PATH="$HOME/.cargo/bin:$PATH"
+    CURRENT_TS="$(tree-sitter --version 2>/dev/null | awk '{print $2}' || true)"
+    if [ "v${CURRENT_TS}" != "$TREE_SITTER_TARGET" ]; then
+        echo "==> tree-sitter '${CURRENT_TS:-none}' detected (required: $TREE_SITTER_TARGET). Installing via cargo..."
         if ! command -v cargo >/dev/null 2>&1; then
             echo "==> Installing Rust toolchain..."
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
             source "$HOME/.cargo/env"
         fi
-        # Build and install specific version
-        cargo install --locked "tree-sitter-cli@${TREE_SITTER_TARGET#v}"
-        echo "==> tree-sitter CLI installed."
+        cargo install --locked --force "tree-sitter-cli@${TREE_SITTER_TARGET#v}"
     else
-        echo "==> tree-sitter CLI already installed, skipping."
+        echo "==> tree-sitter $TREE_SITTER_TARGET already installed, skipping."
     fi
 
     # install Node.js via nvm (nvm is a shell function, so check its install dir)
