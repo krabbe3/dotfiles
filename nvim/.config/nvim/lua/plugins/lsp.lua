@@ -22,56 +22,40 @@ return {
             --
             -- lua_ls with capabilities
             local capabilities = require('blink.cmp').get_lsp_capabilities()
+            capabilities.general = capabilities.general or {}
+            capabilities.general.positionEncodings = { "utf-16" }
             vim.lsp.config('lua_ls', {
                 capabilities = capabilities,
             })
 
-            -- pylsp with capabilities
-            vim.lsp.config('pylsp', {
+            -- basedpyright: completion, hover, types
+            vim.lsp.config('basedpyright', {
                 capabilities = capabilities,
                 settings = {
-                    pylsp = {
-                        plugins = {
-                            pydocstyle = {
-                                ignore = {
-                                    'E303',
-                                    'W503',
-                                    'E203',
-                                    'E501',
-                                    'W391',
-                                    'W291',
-                                    'E226',
-                                }
+                    basedpyright = {
+                        analysis = {
+                            typeCheckingMode = "standard", -- less noisy than default
+                            diagnosticSeverityOverrides = {
+                                reportUnusedImport = "none",
+                                reportUnusedVariable = "none",
                             },
-                            pycodestyle = {
-                                ignore = {
-                                    'E303',
-                                    'W503',
-                                    'E203',
-                                    'E501',
-                                    'W391',
-                                    'W291',
-                                    'E226',
-                                },
-                                maxLineLength = 80,
-                            },
-                            flake8 = {
-                                ignore = {
-                                    'E303',
-                                    'W503',
-                                    'E203',
-                                    'E501',
-                                    'W391',
-                                    'W291',
-                                    'E226',
-                                }
-                            },
-                            autopep8 = {
-                                enabled = false,
-                            },
-                        }
-                    }
-                }
+                        },
+                    },
+                },
+            })
+
+            -- ruff: linting + formatting
+            vim.lsp.config('ruff', {
+                capabilities = capabilities,
+                init_options = {
+                    settings = {
+                        lineLength = 80,
+                        lint = {
+                            extendSelect = { "E", "W" },
+                            ignore = { "E303", "E203", "E501", "W391", "W291", "E226" },
+                        },
+                    },
+                },
             })
 
             -- texlab (LaTeX Language Server)
@@ -93,19 +77,10 @@ return {
                 },
             })
 
-            -- -- basedpyright for even better type hints
-            -- vim.lsp.config('basedpyright', {
-            --     capabilities = capabilities
-            -- })
-
-            -- -- ruff lsp for python (lightning fast)
-            -- vim.lsp.config('ruff', {
-            --     capabilities = capabilities,
-            -- })
-
             -- Enable servers
             vim.lsp.enable('lua_ls')
-            vim.lsp.enable('pylsp')
+            vim.lsp.enable('basedpyright')
+            vim.lsp.enable('ruff')
             vim.lsp.enable('texlab')
 
             -- KEYMAPS for LSPs
@@ -116,40 +91,52 @@ return {
                     local client = vim.lsp.get_client_by_id(args.data.client_id)
 
                     -- diagnostics movement
-                    vim.keymap.set('n', '<leader>sj', vim.diagnostic.goto_next)
-                    vim.keymap.set('n', '<leader>sk', vim.diagnostic.goto_prev)
+                    vim.keymap.set('n', '<leader>sj', function()
+                        vim.diagnostic.jump({ count = 1 })
+                        vim.schedule(vim.diagnostic.open_float)
+                    end, { desc = "next diagnostic" })
+
+                    vim.keymap.set('n', '<leader>sk', function()
+                        vim.diagnostic.jump({ count = -1 })
+                        vim.schedule(vim.diagnostic.open_float)
+                    end, { desc = "prev diagnostic" })
                     -- check for nil
                     if not client then return end
 
+                    -- stop ruff and basedpyright interfer with each other
+                    if client.name == 'ruff' then
+                        client.server_capabilities.hoverProvider = false
+                    end
+
                     -- renaming variables
-                    if client.supports_method('textDocument/rename') then
+                    if client:supports_method('textDocument/rename') then
                         vim.keymap.set('n', '<leader>scn', vim.lsp.buf.rename,
                             { buffer = args.buf, desc = "change name" })
                     end
 
                     -- code action
-                    if client.supports_method('textDocument/codeAction') then
+                    if client:supports_method('textDocument/codeAction') then
                         vim.keymap.set('n', '<leader>sca',
                             vim.lsp.buf.code_action,
                             { buffer = args.buf, desc = "code action" })
                     end
 
                     -- references as quickfix list
-                    if client.supports_method('textDocument/references') then
+                    if client:supports_method('textDocument/references') then
                         vim.keymap.set('n', '<leader>sfr', vim.lsp.buf
                             .references,
                             { buffer = args.buf, desc = "find references" })
                     end
 
                     -- go implementations
-                    if client.supports_method('textDocument/implementation') then
+                    if client:supports_method('textDocument/implementation') then
                         vim.keymap.set('n', '<leader>sfi',
                             vim.lsp.buf.implementation,
                             { buffer = args.buf, desc = "find implementation" })
                     end
 
                     -- go definition and go back
-                    if client.supports_method('textDocument/definition') then
+                    if client:supports_method('textDocument/definition') then
                         vim.keymap.set('n', '<leader>sd', vim.lsp.buf.definition,
                             { buffer = args.buf, desc = "go definition" })
                         vim.keymap.set('n', '<leader>sb', ':normal! <C-o><CR>',
@@ -157,14 +144,14 @@ return {
                     end
 
                     -- hover definition
-                    if client.supports_method('textDocument/hover') then
+                    if client:supports_method('textDocument/hover') then
                         vim.keymap.set('n', '<leader>sh', vim.lsp.buf.hover,
                             { buffer = args.buf, desc = "hover definition" })
                     end
 
                     -- formatting, if supported -> all files
                     -- --> python uses black on save to sff is a way to preformat the files while coding
-                    if client.supports_method('textDocument/formatting') then
+                    if client:supports_method('textDocument/formatting') then
                         -- remap format to leader ff for convenience
                         vim.keymap.set('n', '<leader>sff', function()
                             vim.lsp.buf.format()
