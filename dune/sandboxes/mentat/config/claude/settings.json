@@ -4,5 +4,6 @@
       "effortLevel": "medium"
     }
   },
-  "theme": "dark"
+  "theme": "dark",
+  "model": "fable"
 }

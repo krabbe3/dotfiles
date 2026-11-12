@@ -33,7 +33,9 @@ return {
                     "black",
                     "debugpy",
                     -- "ruff",
-                    "basedpyright",
+                    -- pinned: 1.39.9+ has a signature-help regression that
+                    -- blocks the server for 10-70 s on numpy ufuncs (np.log2()
+                    { "basedpyright", version = "1.39.8" },
                 },
             })
         end,
