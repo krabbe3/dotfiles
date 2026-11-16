@@ -11,6 +11,7 @@
   "trustedWorkspaces": [
     "/workspace",
     "/workspace/dotfiles",
-    "/workspace/chef"
+    "/workspace/chef",
+    "/Users/lorenz/vaults/chef"
   ]
 }
