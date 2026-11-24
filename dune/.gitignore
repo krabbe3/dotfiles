@@ -12,3 +12,6 @@ web-search-cache
 **/web-search.json
 **/history.jsonl
 __pycache__/
+
+# per-project data dirs (host paths)
+sandboxes/mentat/data-mounts

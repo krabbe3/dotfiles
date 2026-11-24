@@ -14,12 +14,13 @@ SANDBOX_DIR="$DUNE_DIR/sandboxes/mentat"
 TARGET_DIR="$(pwd -P)"
 PROJECT_NAME="$(basename "$TARGET_DIR")"
 
-# 2. Parse flags: --py <ver>, --rebuild, --isolated
+# 2. Parse flags: --py <ver>, --rebuild, --isolated, --data <path>
 SELECTED_PY=""
 FORCE_REBUILD=false
 ISOLATED=false
 GITLAB=false
 REBUILD_ENV=false
+CLI_DATA=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -42,6 +43,10 @@ while [[ $# -gt 0 ]]; do
     --rebuild-env)
       REBUILD_ENV=true
       shift
+      ;;
+    -d|--data)
+      CLI_DATA+=("$2")
+      shift 2
       ;;
     *)
       break
@@ -297,31 +302,61 @@ else
   fi
 fi
 
-# 5. Dynamic Data Mounts via DUNE_DATA_MOUNTS
-PROJECT_DATA_MOUNTS=""
-
-if [[ -f "$TARGET_DIR/.env" ]]; then
-  PROJECT_DATA_MOUNTS="$(grep -E '^DUNE_DATA_MOUNTS=' "$TARGET_DIR/.env" | cut -d '=' -f2- | tr -d '\r"' || true)"
+# 5. Data mounts, always read-only at the same path as on the host: -d <path>
+#    and the lines for this project in $SANDBOX_DIR/data-mounts. That file is
+#    never mounted into the container, so the agent cannot add mounts for later
+#    sessions (a setting in the project .env could be edited by the agent).
+PROJECT_ROOT="${GIT_ROOT:-$TARGET_DIR}"
+DATA_PATHS=(${CLI_DATA[@]+"${CLI_DATA[@]}"})
+DATA_REGISTRY="$SANDBOX_DIR/data-mounts"
+if [[ -f "$DATA_REGISTRY" ]]; then
+  # <project root> <data path> [<data path> ...]; relative data paths are
+  # resolved against the project root (e.g. a gitignored data/ in the repo)
+  while read -r root paths; do
+    [[ -z "$root" || "$root" == \#* ]] && continue
+    root="${root/#\~/$HOME}"
+    [[ -d "$root" && "$(cd -P "$root" && pwd)" == "$PROJECT_ROOT" ]] || continue
+    for p in $paths; do
+      p="${p/#\~/$HOME}"
+      [[ "$p" != /* ]] && p="$PROJECT_ROOT/$p"
+      DATA_PATHS+=("$p")
+    done
+  done < "$DATA_REGISTRY"
+fi
+if grep -qsE '^DUNE_DATA_MOUNTS=' "$TARGET_DIR/.env" "$SANDBOX_DIR/.env"; then
+  echo "==> Warning: DUNE_DATA_MOUNTS in .env is ignored, list data dirs in $DATA_REGISTRY"
 fi
 
-if [[ -z "$PROJECT_DATA_MOUNTS" && -f "$SANDBOX_DIR/.env" ]]; then
-  PROJECT_DATA_MOUNTS="$(grep -E '^DUNE_DATA_MOUNTS=' "$SANDBOX_DIR/.env" | cut -d '=' -f2- | tr -d '\r"' || true)"
-fi
+# Physical absolute path of an existing file or directory (macOS has no realpath -e)
+abs_path() {
+  if [[ -d "$1" ]]; then
+    (cd -P "$1" && pwd)
+  elif [[ -e "$1" ]]; then
+    printf '%s/%s\n' "$(cd -P "$(dirname "$1")" && pwd)" "$(basename "$1")"
+  else
+    return 1
+  fi
+}
 
-if [[ -n "$PROJECT_DATA_MOUNTS" ]]; then
-  IFS=',' read -ra MOUNT_ENTRIES <<< "$PROJECT_DATA_MOUNTS"
-  for entry in "${MOUNT_ENTRIES[@]}"; do
-    entry="$(echo "$entry" | xargs)"
-    if [[ -n "$entry" ]]; then
-      # Same-path mapping fallback: host_path:host_path:ro
-      if [[ "$entry" != *:* ]]; then
-        entry="$entry:$entry:ro"
-      fi
-      echo "==> Mounting external data volume (same-path): $entry"
-      EXTRA_VOLUMES+=(-v "$entry")
-    fi
-  done
-fi
+# true if $1 is $2 or a directory containing it
+covers() { [[ "$1" == / || "$2" == "$1" || "$2" == "$1"/* ]]; }
+
+for p in ${DATA_PATHS[@]+"${DATA_PATHS[@]}"}; do
+  # docker would create a missing path as an empty root-owned directory
+  if ! real="$(abs_path "$p")"; then
+    echo "Error: data path $p does not exist" >&2
+    exit 1
+  fi
+  # $HOME and the dune dir (registry, .env with keys) must not be exposed;
+  # data inside $HOME is fine, inside the dune dir it is not
+  home="$(abs_path "$HOME")"
+  if covers "$real" "$home" || covers "$real" "$DUNE_DIR" || covers "$DUNE_DIR" "$real"; then
+    echo "Error: data path $real would expose $home or $DUNE_DIR" >&2
+    exit 1
+  fi
+  echo "==> Data (read-only): $real"
+  EXTRA_VOLUMES+=(-v "$real:$real:ro")
+done
 
 # 6. Host Python env passthrough (Linux hosts): mounted read-only at the same
 #    path; entrypoint.sh adds a session venv on top for the agent's installs

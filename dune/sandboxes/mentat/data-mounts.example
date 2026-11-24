@@ -1,0 +1,10 @@
+# Read-only data mounts per project (see README, Data Mounts):
+#   cp data-mounts.example data-mounts
+#
+# <project root>  <data path> [<data path> ...]
+# Data paths are mounted read-only at the same path in the container.
+# Relative data paths are taken from the project root. ~ is expanded.
+#
+# ~/code/myproject  /scratch/me/raw  /scratch/me/processed
+# ~/code/myproject  /mnt/shared/labels
+# ~/code/other      data

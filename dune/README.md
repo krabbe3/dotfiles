@@ -109,9 +109,11 @@ Host branch dune/agent-<time>   (one per session; dune/agent-latest points to th
 ## Commands
 
 ```Plaintext
-dune mentat [-i] [-g] [-p <python_version>] [-r] [--rebuild-env]
+dune mentat [-i] [-g] [-d <path>]... [-p <python_version>] [-r] [--rebuild-env]
                                      Launch the AI sandbox on the current project (live mode)
     -i, --isolated                Shallow clone instead; agent commits go to dune/agent-<time>
+    -d, --data <path>             Mount a data dir read-only for this session (repeatable,
+                                  see Data Mounts)
     -g, --gitlab                  Give the agent the GitLab token for this session (see below)
     --rebuild-env                 macOS: rebuild the Linux copy of the active env
     -p, --py, --python <version>  Specify Python version (default: the active host venv or
@@ -164,8 +166,6 @@ Container environment is assembled in layers (later files override earlier ones)
 
 1. `sandboxes/mentat/.env` — global sandbox defaults (copy from `.env.example`, e.g. `KISSKI_API_KEY`)
 2. Project `.env` — the `.env` in the folder you start `dune mentat` from (in isolated mode also copied into the clone, gitignored there)
-
-Additionally, a `DUNE_DATA_MOUNTS` variable in either `.env` adds extra bind mounts at runtime, comma-separated. Entries without a `:mode` suffix default to `:ro`, and entries with a single path are mapped to the same path inside the container.
 
 ### GitLab Token (`--gitlab`)
 
@@ -232,6 +232,28 @@ A macOS env contains macOS binaries, which cannot run in the Linux container. On
   env, where a few conda-forge packages are missing.
 - Needs an image with micromamba: run `dune mentat -r` once after updating.
 
+## Data Mounts
+
+Data that lives outside the project (e.g. on `/scratch`) is mounted **read-only, at the same path as
+on the host**, only for the projects that need it. List it in `sandboxes/mentat/data-mounts`
+(gitignored, copy `data-mounts.example`), one project root per line followed by its data paths:
+
+```Plaintext
+# project root (git root)        data paths
+/home/you/code/myproject         /scratch/you/raw  /scratch/you/processed
+/home/you/code/myproject         /mnt/shared/labels
+/home/you/code/other             data              # relative: <root>/data, gitignored in the repo
+```
+
+- One-off: `dune mentat -d /scratch/you/raw` (repeatable) mounts a path for this session only.
+- Relative paths are taken from the project root. A gitignored `data/` in the repo is otherwise
+  writable through the project mount; listed this way, it becomes read-only.
+- The file is never mounted into the container, so the agent cannot add mounts for later
+  sessions. Mount settings in a project `.env` would be editable by the agent in live mode, which
+  is why `DUNE_DATA_MOUNTS` in `.env` is no longer read.
+- Missing paths stop the launch (docker would create an empty root-owned dir instead), and paths
+  that are or contain `$HOME` or the dune dir are refused.
+
 ## Project Dependencies
 
 The sandbox does **not** auto-install project dependencies. The Python available in the container is:
@@ -265,6 +287,7 @@ dotfiles/dune/
 │   └── mentat/
 │       ├── .env              # Global default sandbox environment (gitignored, copy .env.example)
 │       ├── .env.example      # Template: KISSKI_API_KEY, DUNE_GITLAB_HOST, GITLAB_READ_TOKEN
+│       ├── data-mounts       # Read-only data dirs per project (gitignored, copy data-mounts.example)
 │       ├── Dockerfile.mentat # Runtime image definition (agents, dotfiles, tools)
 │       ├── docker-compose.yml# Container run configuration
 │       ├── entrypoint.sh     # Container start: session venv on the host env, then zsh
