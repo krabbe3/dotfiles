@@ -312,7 +312,7 @@ DATA_REGISTRY="$SANDBOX_DIR/data-mounts"
 if [[ -f "$DATA_REGISTRY" ]]; then
   # <project root> <data path> [<data path> ...]; relative data paths are
   # resolved against the project root (e.g. a gitignored data/ in the repo)
-  while read -r root paths; do
+  while read -r root paths || [[ -n "$root" ]]; do
     [[ -z "$root" || "$root" == \#* ]] && continue
     root="${root/#\~/$HOME}"
     [[ -d "$root" && "$(cd -P "$root" && pwd)" == "$PROJECT_ROOT" ]] || continue
